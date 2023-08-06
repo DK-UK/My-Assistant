@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TasksDao {
@@ -19,6 +20,10 @@ interface TasksDao {
     suspend fun deleteTask(vararg unique_id : String)
 
     @Query("SELECT * FROM Task where :whereClause=:whereClauseValue")
-    suspend fun getTasks(whereClause : String, whereClauseValue : String)
+    suspend fun getTasks(whereClause : String, whereClauseValue : String) : List<Task>
+
+    @Query("SELECT * FROM Task")
+    fun getAllTasks() : Flow<List<Task>>
+
 }
 

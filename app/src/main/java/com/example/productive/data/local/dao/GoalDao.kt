@@ -6,6 +6,8 @@ import androidx.room.Query
 import androidx.room.Update
 import com.example.productive.data.local.entity.Event
 import com.example.productive.data.local.entity.Goal
+import com.example.productive.data.local.entity.Task
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface GoalDao {
@@ -19,5 +21,8 @@ interface GoalDao {
     suspend fun deleteGoal(vararg unique_id : String)
 
     @Query("SELECT * FROM Goal where :whereClause=:whereClauseValue")
-    suspend fun getGoals(whereClause : String, whereClauseValue : String)
+    suspend fun getGoals(whereClause : String, whereClauseValue : String) : List<Goal>
+
+    @Query("SELECT * FROM Goal")
+    fun getAllGoals() : Flow<List<Goal>>
 }

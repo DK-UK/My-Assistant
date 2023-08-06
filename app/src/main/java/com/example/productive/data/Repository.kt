@@ -4,8 +4,9 @@ import com.example.productive.data.local.db.ProductiveAppDatabase
 import com.example.productive.data.local.entity.Event
 import com.example.productive.data.local.entity.Goal
 import com.example.productive.data.local.entity.Task
+import kotlinx.coroutines.flow.Flow
 
-class Repository(val database: ProductiveAppDatabase) {
+class Repository(private val database: ProductiveAppDatabase) {
 
     //region Task Table Functions
     suspend fun insertTask(task : Task){
@@ -20,8 +21,12 @@ class Repository(val database: ProductiveAppDatabase) {
         database.taskDao().deleteTask(*unique_id)
     }
 
-    suspend fun getTasks(whereClause : String, whereClauseValue : String){
-        database.taskDao().getTasks(whereClause, whereClauseValue)
+    suspend fun getTasks(whereClause : String, whereClauseValue : String) : List<Task>{
+        return database.taskDao().getTasks(whereClause, whereClauseValue)
+    }
+
+    fun getAllTasks() : Flow<List<Task>> {
+        return database.taskDao().getAllTasks()
     }
     //endregion
 
@@ -41,6 +46,10 @@ class Repository(val database: ProductiveAppDatabase) {
     suspend fun getEvents(whereClause : String, whereClauseValue : String){
         database.eventDao().getEvents(whereClause, whereClauseValue)
     }
+
+    fun getAllEvents() : Flow<List<Event>>{
+        return database.eventDao().getAllEvents()
+    }
     //endregion
 
     //region Goal Table Functions
@@ -58,6 +67,10 @@ class Repository(val database: ProductiveAppDatabase) {
 
     suspend fun getGoals(whereClause : String, whereClauseValue : String){
         database.goalDao().getGoals(whereClause, whereClauseValue)
+    }
+
+    fun getAllGoals() : Flow<List<Goal>>{
+        return database.goalDao().getAllGoals()
     }
     //endregion
 

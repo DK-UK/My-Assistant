@@ -18,7 +18,7 @@ data class Task(
     var completed_at : String
 )
 
-fun Task.toExternalModel(
+public fun Task.toExternalModel(
 ) = ExternalModel(
     unique_id = this.unique_id,
     type = this.type,

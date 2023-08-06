@@ -18,15 +18,17 @@ abstract class ProductiveAppDatabase : RoomDatabase() {
     abstract fun eventDao() : EventDao
     abstract fun goalDao() : GoalDao
 
-    private var INSTANCE : ProductiveAppDatabase? = null
-    fun getInstance(context : Context) : ProductiveAppDatabase{
-        if (INSTANCE == null){
-            INSTANCE = Room.databaseBuilder(
-                context,
-                ProductiveAppDatabase::class.java,
-                "ProductiveDB"
-            ).build()
+    companion object {
+        private var INSTANCE : ProductiveAppDatabase? = null
+        fun getInstance(context: Context): ProductiveAppDatabase {
+            if (INSTANCE == null) {
+                INSTANCE = Room.databaseBuilder(
+                    context,
+                    ProductiveAppDatabase::class.java,
+                    "ProductiveDB"
+                ).build()
+            }
+            return INSTANCE!!
         }
-        return INSTANCE!!
     }
 }
