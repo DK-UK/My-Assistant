@@ -7,15 +7,15 @@ import androidx.room.PrimaryKey
 data class Task(
     @PrimaryKey(autoGenerate = true)
     val id : Int = 0,
-    var unique_id : String = "",
+    var unique_id : Long = 0,
     var type : String = "",
     var title : String = "",
     var description : String = "",
     var is_sub_task_of : String = "", // store unique_id of event or goal
-    var due_date : String = "",
-    var reminder_date : String = "", // store subtracted date from due_date to schedule for notification
-    var created_at : String,
-    var completed_at : String
+    var due_date : Long = 0,
+    var reminder_date : Long = 0, // store subtracted date from due_date to schedule for notification
+    var created_at : Long = 0,
+    var completed_at : Long = 0
 )
 
 public fun Task.toExternalModel(
@@ -35,15 +35,15 @@ public fun Task.toExternalModel(
 data class Event(
     @PrimaryKey(autoGenerate = true)
     val id : Int = 0,
-    var unique_id : String = "",
+    var unique_id : Long = 0,
     var type : String = "",
     var title : String = "",
     var description : String = "",
-    var start_date : String = "",
-    var end_date : String = "",
-    var reminder_date : String = "", // store subtracted date from due_date to schedule for notification
-    var created_at : String,
-    var completed_at : String
+    var start_date : Long = 0,
+    var end_date : Long = 0,
+    var reminder_date : Long = 0, // store subtracted date from due_date to schedule for notification
+    var created_at : Long = 0,
+    var completed_at : Long = 0
 )
 
 fun Event.toExternalModel(
@@ -63,15 +63,15 @@ fun Event.toExternalModel(
 data class Goal(
     @PrimaryKey(autoGenerate = true)
     val id : Int = 0,
-    var unique_id : String = "",
+    var unique_id : Long = 0,
     var type : String = "",
     var title : String = "",
     var description : String = "",
-    var start_date : String = "",
-    var end_date : String = "", // relevant to due_date
-    var reminder_date : String = "", // store subtracted date from due_date to schedule for notification
-    var created_at : String,
-    var completed_at : String
+    var start_date : Long = 0,
+    var end_date : Long = 0, // relevant to due_date
+    var reminder_date : Long = 0, // store subtracted date from due_date to schedule for notification
+    var created_at : Long = 0,
+    var completed_at : Long = 0
 )
 
 fun Goal.toExternalModel(

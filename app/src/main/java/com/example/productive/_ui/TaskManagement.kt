@@ -7,8 +7,10 @@ import android.util.Log
 import android.widget.DatePicker
 import android.widget.TimePicker
 import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.foundation.Indication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,8 +22,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,6 +43,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,8 +57,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.productive.Utility.Utility
+import com.example.productive._ui.reminder.ScheduleAlarmSingleton
 import com.example.productive._ui.viewModels.TasksViewModel
 import com.example.productive.data.local.entity.ExternalModel
+import com.example.productive.data.local.entity.Task
 import com.example.productive.ui.theme.Purple80
 import kotlinx.coroutines.CoroutineScope
 import java.util.Calendar
@@ -65,17 +72,23 @@ val managementList = mutableListOf<String>(
     "Goals"
 )
 val reminderList = mutableListOf<String>(
-    "5 mins",
-    "10 mins",
-    "30 mins",
-    "1 hour"
+    "1",
+    "5",
+    "10",
+    "30",
+    "60",
+    "120"
 )
+
 @Composable
 fun TaskManagement(
     modifier: Modifier,
     taskViewModel: TasksViewModel,
-    scope : CoroutineScope = rememberCoroutineScope()
+    scope: CoroutineScope = rememberCoroutineScope()
 ) {
+    val context = LocalContext.current
+    val alarmManager = ScheduleAlarmSingleton.getInstance(context)
+
     Surface(
         modifier = modifier
             .fillMaxSize()
@@ -95,29 +108,33 @@ fun TaskManagement(
             modifier = Modifier.padding(16.dp)
         ) {
 
-            var showDialog by remember{
+            var showDialog by remember {
                 mutableStateOf(false)
             }
 
             FloatingActionButton(
                 onClick = {
-                   showDialog = true
+                    showDialog = true
                 },
                 contentColor = Color.White
             ) {
                 Icon(imageVector = Icons.Filled.Add, contentDescription = "Add")
             }
 
-            if (showDialog){
+            if (showDialog) {
                 addTaskEventGoalDialog(
                     onDismissDialog = {
                         showDialog = false
-                    }
+                    },
+                    viewModel = taskViewModel,
+                    alarmManager = alarmManager,
+                    context = context
                 )
             }
         }
     }
 }
+
 @Composable
 fun tasksEventsGoals(tasksEventsGoalsList: List<ExternalModel>) {
     Row(
@@ -142,9 +159,46 @@ fun tasksEventsGoals(tasksEventsGoalsList: List<ExternalModel>) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun addTaskEventGoalDialog(
-    onDismissDialog : () -> Unit
+    onDismissDialog: () -> Unit,
+    viewModel: TasksViewModel,
+    alarmManager: ScheduleAlarmSingleton,
+    context: Context
 ) {
-    val context = LocalContext.current
+    val uniqueId = Utility.generateUniqueId()
+
+    var isTitleEmpty by  rememberSaveable {
+        mutableStateOf(false)
+    }
+    var title by remember {
+        mutableStateOf("")
+    }
+    var description by remember {
+        mutableStateOf("")
+    }
+
+    // Type (task, event, goal)
+    var typeSelected by remember {
+        mutableStateOf(managementList[0])
+    }
+
+    var reminderSelected by remember {
+        mutableStateOf(reminderList[0])
+    }
+
+    var cal = Calendar.getInstance()
+    cal.add(Calendar.HOUR_OF_DAY, 1)
+    var dueDateTime by remember {
+        mutableStateOf(Utility.convertMillisToDate(cal.timeInMillis))
+    }
+    var fromTime by remember {
+        mutableStateOf(Utility.convertMillisToDate(cal.timeInMillis))
+    }
+    var toTime by remember {
+        mutableStateOf(Utility.convertMillisToDate(cal.timeInMillis))
+    }
+    var notifyMe by rememberSaveable {
+        mutableStateOf(false)
+    }
 
     Dialog(
         onDismissRequest = onDismissDialog,
@@ -158,78 +212,6 @@ fun addTaskEventGoalDialog(
                 .verticalScroll(state = rememberScrollState())
         ) {
 
-            var title by remember {
-                mutableStateOf("")
-            }
-            var description by remember {
-                mutableStateOf("")
-            }
-
-            // Type (task, event, goal)
-            var typeSelected by remember {
-                mutableStateOf(managementList[0])
-            }
-
-            var reminderSelected by remember {
-                mutableStateOf(reminderList[0])
-            }
-
-            // For Type
-            /*Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-
-                Text(text = "Type", style = MaterialTheme.typography.bodyLarge)
-
-                Row(
-                    modifier = Modifier
-                        .padding(horizontal = 5.dp)
-                        .background(
-                            shape = RoundedCornerShape(5f, 5f, 5f, 5f),
-                            color = MaterialTheme.colorScheme.primaryContainer
-                        )
-                        .padding(horizontal = 8.dp)
-                        .clickable {
-                            isExpanded = !isExpanded
-                        }
-                ) {
-                    var rotate by remember{
-                        mutableStateOf(0)
-                    }
-                    LaunchedEffect(key1 = isExpanded){
-                        if (isExpanded)
-                            rotate = -180
-                        else
-                            rotate = 0
-                    }
-
-                    val rotateArrow = animateIntAsState(targetValue = rotate)
-
-                    Text(text = typeSelected,
-                        style = MaterialTheme.typography.bodyMedium)
-                    Icon(
-                        imageVector = *//*if(isExpanded) Icons.Filled.KeyboardArrowUp else *//*Icons.Filled.KeyboardArrowDown,
-                        contentDescription = "arrow down",
-                        modifier = Modifier.rotate(rotateArrow.value.toFloat())
-                    )
-                }
-                DropdownMenu(expanded = isExpanded, onDismissRequest = { isExpanded = false },
-                    modifier = Modifier
-                        .weight(1f)
-                        .background(color = Color.White)
-                ) {
-                    managementList.forEach {
-                        DropdownMenuItem(text = {
-                            Text(text = it)
-                        }, onClick = {
-                            isExpanded = !isExpanded
-                            typeSelected = it
-                        })
-                    }
-                }
-            }*/
-
             createDropDownMenu(
                 menuTitle = "Type",
                 dropDownMenuList = managementList,
@@ -239,15 +221,33 @@ fun addTaskEventGoalDialog(
                 }
             )
             // Title
-            OutlinedTextField(value = title, onValueChange = {
-                title = it
-            },
+            OutlinedTextField(
+                value = title,
+                onValueChange = {
+                    title = it
+                    if(it.length > 0){
+                        isTitleEmpty = false
+                    }
+                },
                 label = {
-                              Text(text = "Title")
+                    Text(text = "Title")
+                },
+                isError = isTitleEmpty,
+                supportingText = {
+                                 if (isTitleEmpty){
+                                     Text(text = "Required field!",
+                                         color = MaterialTheme.colorScheme.error)
+                                 }
+                },
+                trailingIcon = {
+                    if (isTitleEmpty) {
+                        Icon(imageVector = Icons.Filled.Info, contentDescription = "Error",
+                            tint = MaterialTheme.colorScheme.error)
+                    }
                 },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                )
+            )
 
             // Description
             OutlinedTextField(value = description, onValueChange = {
@@ -259,23 +259,18 @@ fun addTaskEventGoalDialog(
                 })
 
 
-            if (typeSelected.equals("Tasks", ignoreCase = true)){
-                var cal = Calendar.getInstance()
-                cal.add(Calendar.HOUR_OF_DAY, 1)
-                var dateTime by remember {
-                    mutableStateOf(Utility.convertMillisToDate(cal.timeInMillis))
-                }
+            if (typeSelected.equals("Tasks", ignoreCase = true)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(vertical = 10.dp)
                 ) {
                     Text(text = "Due : ", style = MaterialTheme.typography.bodyLarge)
-                    Text(text = dateTime,
+                    Text(text = dueDateTime,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier
                             .clickable {
                                 showDateTimePicker(context) {
-                                    dateTime = Utility.convertMillisToDate(it.timeInMillis)
+                                    dueDateTime = Utility.convertMillisToDate(it.timeInMillis)
                                 }
                             }
                             .drawBehind {
@@ -288,19 +283,15 @@ fun addTaskEventGoalDialog(
                             .padding(5.dp))
                 }
             }
-            else{
+            else {
                 // For Events and Goals
-                var cal = Calendar.getInstance()
-                cal.add(Calendar.HOUR_OF_DAY, 1)
 
-                Column(){
+                Column() {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(vertical = 5.dp)
                     ) {
-                        var fromTime by remember {
-                            mutableStateOf(Utility.convertMillisToDate(cal.timeInMillis))
-                        }
+
                         Text(text = "From : ", style = MaterialTheme.typography.bodyLarge)
                         Text(text = fromTime,
                             style = MaterialTheme.typography.bodyMedium,
@@ -323,9 +314,7 @@ fun addTaskEventGoalDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(vertical = 5.dp)
                     ) {
-                        var toTime by remember {
-                            mutableStateOf(Utility.convertMillisToDate(cal.timeInMillis))
-                        }
+
                         Text(text = "To : ", style = MaterialTheme.typography.bodyLarge)
                         Text(text = toTime,
                             style = MaterialTheme.typography.bodyMedium,
@@ -347,16 +336,38 @@ fun addTaskEventGoalDialog(
                 }
 
             }
-            // Notify
-            createDropDownMenu(
-                menuTitle = "Notify before ",
-                dropDownMenuList = reminderList,
-                typeSelected = reminderSelected,
-                onMenuSelected = {
-                    reminderSelected = it
-                }
-            )
-            
+
+            // Notify preference
+            Row(
+                modifier = Modifier.fillMaxWidth()
+                    .clickable(
+                        indication = null,
+                        interactionSource = MutableInteractionSource()
+                    ) {
+                        notifyMe = !notifyMe
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+            ){
+                Text(text = "Notify me",
+                    style = MaterialTheme.typography.bodyLarge)
+
+                Checkbox(checked = notifyMe, onCheckedChange = {
+                    notifyMe = it
+                    Log.e("Dhaval", "CHECKBOX : ${it}", )
+                })
+            }
+            if (notifyMe) {
+                // Notify
+                createDropDownMenu(
+                    menuTitle = "Notify before ",
+                    dropDownMenuList = reminderList,
+                    endingText = " mins",
+                    typeSelected = reminderSelected,
+                    onMenuSelected = {
+                        reminderSelected = it
+                    }
+                )
+            }
             // cancel and create button
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -364,14 +375,43 @@ fun addTaskEventGoalDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 10.dp)
-            ){
-                OutlinedButton(onClick = onDismissDialog,
-                    modifier = Modifier.padding(5.dp)) {
+            ) {
+                OutlinedButton(
+                    onClick = onDismissDialog,
+                    modifier = Modifier.padding(5.dp)
+                ) {
                     Text(text = "Cancel")
                 }
 
-                Button(onClick = { /*TODO*/ },
-                    modifier = Modifier.padding(5.dp)) {
+                Button(
+                    onClick = {
+
+                        if (title.trim().isEmpty()){
+                            isTitleEmpty = true
+                        }
+                        else {
+                            val dueDateTime = Utility.convertStringToMillis(dueDateTime)
+                            val task = Task(
+                                unique_id = uniqueId,
+                                type = typeSelected,
+                                title = title,
+                                description = description,
+                                due_date = dueDateTime,
+                                reminder_date = (reminderSelected.toLong() * 1000),
+                                created_at = cal.timeInMillis
+                            )
+                            viewModel.insertTask(task)
+
+                            // schecule alarm on task creation
+                            alarmManager.scheduleOrUpdateAlarm(
+                                dueDateTime - (reminderSelected.toLong() * 60 * 1000),
+                                uniqueId.toInt()
+                            )
+                            onDismissDialog.invoke()
+                        }
+                    },
+                    modifier = Modifier.padding(5.dp)
+                ) {
                     Text(text = "Create")
                 }
             }
@@ -379,7 +419,7 @@ fun addTaskEventGoalDialog(
     }
 }
 
-private fun showDateTimePicker(context : Context, onDateTimeSelected : (Calendar) -> Unit){
+private fun showDateTimePicker(context: Context, onDateTimeSelected: (Calendar) -> Unit) {
     val c = Calendar.getInstance()
     val year = c.get(Calendar.YEAR)
     val month = c.get(Calendar.MONTH)
@@ -391,7 +431,7 @@ private fun showDateTimePicker(context : Context, onDateTimeSelected : (Calendar
 
     val timePicker = TimePickerDialog(
         /* context = */ context,
-        /* listener = */ object : TimePickerDialog.OnTimeSetListener{
+        /* listener = */ object : TimePickerDialog.OnTimeSetListener {
             override fun onTimeSet(p0: TimePicker?, p1: Int, p2: Int) {
                 dateTimeValue.set(Calendar.MINUTE, p2)
                 dateTimeValue.set(Calendar.HOUR_OF_DAY, p1)
@@ -405,9 +445,9 @@ private fun showDateTimePicker(context : Context, onDateTimeSelected : (Calendar
     )
     val datePicker = DatePickerDialog(
         context,
-        object : DatePickerDialog.OnDateSetListener{
+        object : DatePickerDialog.OnDateSetListener {
             override fun onDateSet(p0: DatePicker?, year: Int, month: Int, day: Int) {
-                Log.e("Dhaval", "onDateSet: day : ${day} -- month : ${month} -- year : ${year}", )
+                Log.e("Dhaval", "onDateSet: day : ${day} -- month : ${month} -- year : ${year}")
                 dateTimeValue.set(Calendar.DAY_OF_MONTH, day)
                 dateTimeValue.set(Calendar.MONTH, month)
                 dateTimeValue.set(Calendar.YEAR, year)
@@ -424,10 +464,11 @@ private fun showDateTimePicker(context : Context, onDateTimeSelected : (Calendar
 
 @Composable
 fun createDropDownMenu(
-    menuTitle : String,
-    dropDownMenuList : List<String>,
-    typeSelected : String,
-    onMenuSelected : (String) -> Unit
+    menuTitle: String,
+    dropDownMenuList: List<String>,
+    endingText: String = "",
+    typeSelected: String,
+    onMenuSelected: (String) -> Unit
 ) {
     var isExpanded by remember {
         mutableStateOf(false)
@@ -453,10 +494,10 @@ fun createDropDownMenu(
                     isExpanded = !isExpanded
                 }
         ) {
-            var rotate by remember{
+            var rotate by remember {
                 mutableStateOf(0)
             }
-            LaunchedEffect(key1 = isExpanded){
+            LaunchedEffect(key1 = isExpanded) {
                 if (isExpanded)
                     rotate = -180
                 else
@@ -465,15 +506,18 @@ fun createDropDownMenu(
 
             val rotateArrow = animateIntAsState(targetValue = rotate)
 
-            Text(text = typeSelected,
-                style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = typeSelected,
+                style = MaterialTheme.typography.bodyMedium
+            )
             Icon(
-                imageVector = /*if(isExpanded) Icons.Filled.KeyboardArrowUp else */Icons.Filled.KeyboardArrowDown,
+                imageVector = Icons.Filled.KeyboardArrowDown,
                 contentDescription = "arrow down",
                 modifier = Modifier.rotate(rotateArrow.value.toFloat())
             )
         }
-        DropdownMenu(expanded = isExpanded, onDismissRequest = { isExpanded = false },
+        DropdownMenu(
+            expanded = isExpanded, onDismissRequest = { isExpanded = false },
             modifier = Modifier
                 .weight(1f)
                 .background(color = Color.White)
@@ -487,13 +531,18 @@ fun createDropDownMenu(
                 })
             }
         }
+        Text(
+            text = endingText,
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
+
 @Preview
 @Composable
 fun prevTaskManagement() {
 //    TaskManagement(modifier = Modifier.padding(5.dp), taskViewModel = viewModel())
-    addTaskEventGoalDialog {
+    /*addTaskEventGoalDialog {
 
-    }
+    }*/
 }
