@@ -11,7 +11,7 @@ data class Task(
     var type : String = "",
     var title : String = "",
     var description : String = "",
-    var is_sub_task_of : String = "", // store unique_id of event or goal
+    var is_sub_task_of : Long = 0, // store unique_id of event or goal
     var due_date : Long = 0,
     var reminder_date : Long = 0, // store subtracted date from due_date to schedule for notification
     var created_at : Long = 0,

@@ -7,16 +7,22 @@ import android.util.Log
 import android.widget.DatePicker
 import android.widget.TimePicker
 import androidx.compose.animation.core.animateIntAsState
-import androidx.compose.foundation.Indication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -25,6 +31,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -34,6 +42,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ShapeDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,10 +61,14 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.productive.R
 import com.example.productive.Utility.Utility
 import com.example.productive._ui.reminder.ScheduleAlarmSingleton
 import com.example.productive._ui.viewModels.TasksViewModel
@@ -102,6 +115,8 @@ fun TaskManagement(
             tasksEventsGoals(tasksEventsGoalsList)
         }
 
+
+        // For FAB button
         Column(
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.End,
@@ -137,23 +152,207 @@ fun TaskManagement(
 
 @Composable
 fun tasksEventsGoals(tasksEventsGoalsList: List<ExternalModel>) {
-    Row(
-        horizontalArrangement = Arrangement.SpaceEvenly
+    Box(
+        modifier = Modifier
+        .padding(top = 20.dp)
     ) {
+        var clickedText by rememberSaveable {
+            mutableStateOf(managementList[0])
+        }
 
-        // Get the data of tasks, events, goals from DB
-        // append the count to each
+        val filteredResult = tasksEventsGoalsList.filter {
+            it.type == clickedText
+        }
+        Card(
+            modifier = Modifier
+                .padding(10.dp)
+                .padding(top = 17.dp)
+                .fillMaxSize(2f),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 2.dp
+            ),
+            shape = ShapeDefaults.ExtraSmall
+        ) {
+            if (filteredResult.isNotEmpty()) {
+                LazyColumn {
+                    items(filteredResult) {
+                        createTaskUI(task = it)
+                    }
+                }
+            }
+            else{
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ){
+                    Text(text = "No ${clickedText} created yet",
+                        style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+        }
 
-        Log.e("Dhaval", "tasksEventsGoals: value : ${tasksEventsGoalsList}")
+        Row(
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
 
-        managementList.forEach {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(5.dp)
-            )
+            // Get the data of tasks, events, goals from DB
+            // append the count to each
+
+            Log.e("Dhaval", "tasksEventsGoals: value : ${tasksEventsGoalsList}")
+
+            managementList.forEach {
+
+                if (it.equals(clickedText, ignoreCase = true)) {
+                    Card(border = null,
+                        modifier = Modifier.padding(horizontal = 10.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 2.dp
+                        ),
+                        shape = RoundedCornerShape(topStart = 2.dp,
+                            topEnd = 2.dp)
+                    ) {
+
+                            createText(text = it, onClickedTextChanged = { text ->
+                                clickedText = text
+                            })
+                    }
+                }
+                else{
+                    createText(text = it, onClickedTextChanged = { text ->
+                        clickedText = text
+                    })
+                }
+            }
+        }
+
+        // To hide the border of Card of tasks'
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 27.dp)
+                .fillMaxWidth()
+                .width(20.dp)
+                .height(5.dp)
+                .background(color = Color.White)
+        ){}
+    }
+}
+
+@Composable
+fun createText(text : String,
+               onClickedTextChanged : (String) -> Unit) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium
+            .copy(
+                fontWeight = FontWeight.ExtraBold
+            ),
+        modifier = Modifier
+            .padding(5.dp)
+            .padding(horizontal = 8.dp)
+            .clickable {
+                onClickedTextChanged.invoke(text)
+            }
+    )
+}
+
+@Composable
+fun createTaskUI(
+    task: ExternalModel
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = 10.dp,
+                vertical = 5.dp
+            ),
+        /* shadowElevation = 7.dp,*/
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.primaryContainer,
+
+        ) {
+        Column(
+            modifier = Modifier.padding(10.dp)
+        ) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Text(
+                    text = task.title,
+                    style = MaterialTheme.typography.bodyLarge
+                        .copy(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                if (task.reminder_date > 0) {
+                    Icon(
+                        painterResource(id = R.drawable.ic_alarm), contentDescription = "Reminder",
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+
+                ) {
+                Text(
+                    text = task.description,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = Utility.convertMillisToDate(task.due_date),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .align(Alignment.Bottom)
+                )
+            }
+
+            // is_sub_task_of = this task might be associated with
+            // event or goal
+            if (task.is_sub_task_of > 0) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 5.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Show All",
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+            }
         }
     }
+
+}
+
+@Preview(showBackground = true)
+@Composable
+fun taskUI() {
+    createTaskUI(
+        task = ExternalModel(
+            title = "hello world!!",
+            description = "hello this is a testing description for this particular task." +
+                    "sdflsdjflsdflksdflsdfklsj sadflsdafjklsaflsdafjsdlfsdlfjlsdkfjlsdj" +
+                    "flsdjflsdjflsdjfklsdflsdjflsdfkls"
+        )
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -166,7 +365,7 @@ fun addTaskEventGoalDialog(
 ) {
     val uniqueId = Utility.generateUniqueId()
 
-    var isTitleEmpty by  rememberSaveable {
+    var isTitleEmpty by rememberSaveable {
         mutableStateOf(false)
     }
     var title by remember {
@@ -225,7 +424,7 @@ fun addTaskEventGoalDialog(
                 value = title,
                 onValueChange = {
                     title = it
-                    if(it.length > 0){
+                    if (it.length > 0) {
                         isTitleEmpty = false
                     }
                 },
@@ -234,15 +433,19 @@ fun addTaskEventGoalDialog(
                 },
                 isError = isTitleEmpty,
                 supportingText = {
-                                 if (isTitleEmpty){
-                                     Text(text = "Required field!",
-                                         color = MaterialTheme.colorScheme.error)
-                                 }
+                    if (isTitleEmpty) {
+                        Text(
+                            text = "Required field!",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 },
                 trailingIcon = {
                     if (isTitleEmpty) {
-                        Icon(imageVector = Icons.Filled.Info, contentDescription = "Error",
-                            tint = MaterialTheme.colorScheme.error)
+                        Icon(
+                            imageVector = Icons.Filled.Info, contentDescription = "Error",
+                            tint = MaterialTheme.colorScheme.error
+                        )
                     }
                 },
                 singleLine = true,
@@ -282,8 +485,7 @@ fun addTaskEventGoalDialog(
                             }
                             .padding(5.dp))
                 }
-            }
-            else {
+            } else {
                 // For Events and Goals
 
                 Column() {
@@ -339,7 +541,8 @@ fun addTaskEventGoalDialog(
 
             // Notify preference
             Row(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .clickable(
                         indication = null,
                         interactionSource = MutableInteractionSource()
@@ -347,13 +550,15 @@ fun addTaskEventGoalDialog(
                         notifyMe = !notifyMe
                     },
                 verticalAlignment = Alignment.CenterVertically,
-            ){
-                Text(text = "Notify me",
-                    style = MaterialTheme.typography.bodyLarge)
+            ) {
+                Text(
+                    text = "Notify me",
+                    style = MaterialTheme.typography.bodyLarge
+                )
 
                 Checkbox(checked = notifyMe, onCheckedChange = {
                     notifyMe = it
-                    Log.e("Dhaval", "CHECKBOX : ${it}", )
+                    Log.e("Dhaval", "CHECKBOX : ${it}")
                 })
             }
             if (notifyMe) {
@@ -386,10 +591,9 @@ fun addTaskEventGoalDialog(
                 Button(
                     onClick = {
 
-                        if (title.trim().isEmpty()){
+                        if (title.trim().isEmpty()) {
                             isTitleEmpty = true
-                        }
-                        else {
+                        } else {
                             val dueDateTime = Utility.convertStringToMillis(dueDateTime)
                             val task = Task(
                                 unique_id = uniqueId,
@@ -397,16 +601,19 @@ fun addTaskEventGoalDialog(
                                 title = title,
                                 description = description,
                                 due_date = dueDateTime,
-                                reminder_date = (reminderSelected.toLong() * 1000),
+                                reminder_date = if (notifyMe) (reminderSelected.toLong() * 1000) else 0L,
                                 created_at = cal.timeInMillis
                             )
                             viewModel.insertTask(task)
 
-                            // schecule alarm on task creation
-                            alarmManager.scheduleOrUpdateAlarm(
-                                dueDateTime - (reminderSelected.toLong() * 60 * 1000),
-                                uniqueId.toInt()
-                            )
+                            // schedule alarm on task creation
+                            // if notify is checked
+                            if (notifyMe) {
+                                alarmManager.scheduleOrUpdateAlarm(
+                                    dueDateTime - (reminderSelected.toLong() * 60 * 1000),
+                                    uniqueId.toInt()
+                                )
+                            }
                             onDismissDialog.invoke()
                         }
                     },
@@ -538,11 +745,20 @@ fun createDropDownMenu(
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 fun prevTaskManagement() {
 //    TaskManagement(modifier = Modifier.padding(5.dp), taskViewModel = viewModel())
     /*addTaskEventGoalDialog {
 
     }*/
+
+    tasksEventsGoals(tasksEventsGoalsList = listOf(
+        ExternalModel(
+            title = "hello world!!",
+            description = "hello this is a testing description for this particular task." +
+                    "sdflsdjflsdflksdflsdfklsj sadflsdafjklsaflsdafjsdlfsdlfjlsdkfjlsdj" +
+                    "flsdjflsdjflsdjfklsdflsdjflsdfkls"
+        )
+    ))
 }
