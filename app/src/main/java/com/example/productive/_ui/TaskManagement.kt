@@ -28,8 +28,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -47,6 +52,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,6 +66,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -234,7 +241,8 @@ fun tasksEventsGoals(tasksEventsGoalsList: List<ExternalModel>) {
 
         // To hide the border of Card of tasks'
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 27.dp)
+            modifier = Modifier
+                .padding(horizontal = 10.dp, vertical = 27.dp)
                 .fillMaxWidth()
                 .width(20.dp)
                 .height(5.dp)
@@ -255,7 +263,10 @@ fun createText(text : String,
         modifier = Modifier
             .padding(5.dp)
             .padding(horizontal = 8.dp)
-            .clickable {
+            .clickable(
+                indication = null,
+                interactionSource = MutableInteractionSource()
+            ) {
                 onClickedTextChanged.invoke(text)
             }
     )
@@ -265,81 +276,197 @@ fun createText(text : String,
 fun createTaskUI(
     task: ExternalModel
 ) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(
-                horizontal = 10.dp,
-                vertical = 5.dp
-            ),
-        /* shadowElevation = 7.dp,*/
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.primaryContainer,
+    var iconClicked: ImageVector by remember{
+        mutableStateOf(Icons.Filled.Close)
+    }
 
-        ) {
-        Column(
-            modifier = Modifier.padding(10.dp)
-        ) {
+    handleTaskOperationClicks(imgVector = iconClicked,
+        task = task)
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+    Row(
+        verticalAlignment = Alignment.CenterVertically
+    ){
+
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = 10.dp,
+                    vertical = 5.dp
+                )
+                .weight(1f),
+            /* shadowElevation = 7.dp,*/
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.primaryContainer,
+
+            ) {
+            Column(
+                modifier = Modifier.padding(10.dp)
             ) {
 
-                Text(
-                    text = task.title,
-                    style = MaterialTheme.typography.bodyLarge
-                        .copy(fontWeight = FontWeight.Bold),
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
-                if (task.reminder_date > 0) {
-                    Icon(
-                        painterResource(id = R.drawable.ic_alarm), contentDescription = "Reminder",
-                        modifier = Modifier.size(15.dp)
-                    )
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-
-                ) {
-                Text(
-                    text = task.description,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(
-                    text = Utility.convertMillisToDate(task.due_date),
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .align(Alignment.Bottom)
-                )
-            }
-
-            // is_sub_task_of = this task might be associated with
-            // event or goal
-            if (task.is_sub_task_of > 0) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 5.dp),
-                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+
                     Text(
-                        text = "Show All",
-                        fontWeight = FontWeight.ExtraBold
+                        text = task.title,
+                        style = MaterialTheme.typography.bodyLarge
+                            .copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    if (task.reminder_date > 0) {
+                        Icon(
+                            painterResource(id = R.drawable.ic_alarm), contentDescription = "Reminder",
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+
+                    ) {
+                    Text(
+                        text = task.description,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = Utility.convertMillisToDate(task.due_date),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .align(Alignment.Bottom)
                     )
                 }
+
+                // is_sub_task_of = this task might be associated with
+                // event or goal
+                if (task.is_sub_task_of > 0) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 5.dp),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Show All",
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                }
+            }
+        }
+
+        Column (
+            verticalArrangement = Arrangement.Center
+        ) {
+            createIcon(imgVector = Icons.Filled.Check) {
+                iconClicked = Icons.Filled.Check
+            }
+            createIcon(imgVector = Icons.Filled.Edit) {
+                iconClicked = Icons.Filled.Edit
+            }
+            createIcon(imgVector = Icons.Filled.Delete) {
+                iconClicked = Icons.Filled.Delete
             }
         }
     }
 
+}
+
+@Composable
+fun handleTaskOperationClicks(
+    imgVector: ImageVector,
+    task: ExternalModel
+) {
+    when(imgVector){
+        Icons.Filled.Check -> {
+            var show by rememberSaveable {
+                mutableStateOf(true)
+            }
+            LaunchedEffect(key1 = task.unique_id){
+                show = true
+            }
+
+            if (show) {
+                showTaskOperationDialog(
+                    onDismissDialog = {
+                        show = false
+                    },
+                    onConfirmBtnClicked = {
+                        show = false
+                    },
+                    dialogText = "Are you sure you want to mark this as completed ?"
+                )
+            }
+        }
+        Icons.Filled.Edit -> {
+            Log.e("Dhaval", "Edit Clicked")
+        }
+        Icons.Filled.Delete -> {
+            showTaskOperationDialog(
+                onDismissDialog = { /*TODO*/ },
+                onConfirmBtnClicked = { /*TODO*/ },
+                dialogText = "Are you sure you want to delete this ?"
+            )
+        }
+    }
+}
+
+@Composable
+fun showTaskOperationDialog(
+    onDismissDialog: () -> Unit,
+    onConfirmBtnClicked : () -> Unit,
+    dialogText : String
+) {
+
+        AlertDialog(properties = DialogProperties(),
+            dismissButton = {
+                OutlinedButton(onClick = onDismissDialog) {
+                    Text(text = "Cancel")
+                }
+            },
+            onDismissRequest = onDismissDialog, confirmButton = {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            onConfirmBtnClicked.invoke()
+                            onDismissDialog.invoke()
+                        }
+                    ) {
+                        Text(text = "Yes")
+                    }
+                }
+            },
+            text = {
+                Text(
+                    text = dialogText,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            })
+}
+
+@Composable
+fun createIcon(imgVector : ImageVector,
+               contentDescription : String = "",
+               onIconClicked : () -> Unit) {
+    Icon(imageVector = imgVector, contentDescription = contentDescription,
+        modifier = Modifier
+            .padding(5.dp)
+            .size(15.dp)
+            .clickable {
+                onIconClicked.invoke()
+            })
 }
 
 @Preview(showBackground = true)
