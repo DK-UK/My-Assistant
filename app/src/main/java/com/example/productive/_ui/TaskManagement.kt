@@ -52,12 +52,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -82,7 +80,7 @@ import com.example.productive._ui.viewModels.TasksViewModel
 import com.example.productive.data.local.entity.ExternalModel
 import com.example.productive.data.local.entity.Task
 import com.example.productive.ui.theme.Purple80
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.filter
 import java.util.Calendar
 
 
@@ -104,7 +102,7 @@ val reminderList = mutableListOf<String>(
 fun TaskManagement(
     modifier: Modifier,
     taskViewModel: TasksViewModel,
-    scope: CoroutineScope = rememberCoroutineScope()
+    /*scope: CoroutineScope = rememberCoroutineScope()*/
 ) {
     val context = LocalContext.current
     val alarmManager = ScheduleAlarmSingleton.getInstance(context)
@@ -119,7 +117,10 @@ fun TaskManagement(
 
             val tasksEventsGoalsList = taskViewModel.getAllTasksEventsGoals()
                 .collectAsState(initial = emptyList<ExternalModel>()).value
-            tasksEventsGoals(tasksEventsGoalsList)
+            tasksEventsGoalsListUI(tasksEventsGoalsList,
+                viewModel = taskViewModel,
+                alarmManager = alarmManager,
+                context = context)
         }
 
 
@@ -150,7 +151,8 @@ fun TaskManagement(
                     },
                     viewModel = taskViewModel,
                     alarmManager = alarmManager,
-                    context = context
+                    context = context,
+                    task = ExternalModel()
                 )
             }
         }
@@ -158,23 +160,29 @@ fun TaskManagement(
 }
 
 @Composable
-fun tasksEventsGoals(tasksEventsGoalsList: List<ExternalModel>) {
+fun tasksEventsGoalsListUI(tasksEventsGoalsList: List<ExternalModel>,
+                           viewModel: TasksViewModel,
+                           alarmManager: ScheduleAlarmSingleton,
+                           context: Context) {
+    var clickedText by rememberSaveable {
+        mutableStateOf(managementList[0])
+    }
+
+    val filteredResult = tasksEventsGoalsList.filter {
+        it.type == clickedText && it.completed_at == 0L
+    }
+
     Box(
         modifier = Modifier
         .padding(top = 20.dp)
     ) {
-        var clickedText by rememberSaveable {
-            mutableStateOf(managementList[0])
-        }
 
-        val filteredResult = tasksEventsGoalsList.filter {
-            it.type == clickedText
-        }
+        // List of Tasks (Tasks, Events, Goals UI)
         Card(
             modifier = Modifier
                 .padding(10.dp)
-                .padding(top = 17.dp)
-                .fillMaxSize(2f),
+                .padding(top = 17.dp, bottom = 30.dp)
+                .fillMaxSize(),
             colors = CardDefaults.cardColors(
                 containerColor = Color.White
             ),
@@ -186,7 +194,10 @@ fun tasksEventsGoals(tasksEventsGoalsList: List<ExternalModel>) {
             if (filteredResult.isNotEmpty()) {
                 LazyColumn {
                     items(filteredResult) {
-                        createTaskUI(task = it)
+                        createTaskUI(task = it,
+                            viewModel = viewModel,
+                            alarmManager = alarmManager,
+                            context = context)
                     }
                 }
             }
@@ -202,6 +213,7 @@ fun tasksEventsGoals(tasksEventsGoalsList: List<ExternalModel>) {
             }
         }
 
+        // Tasks, Events, Goals Tab
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
@@ -239,7 +251,8 @@ fun tasksEventsGoals(tasksEventsGoalsList: List<ExternalModel>) {
             }
         }
 
-        // To hide the border of Card of tasks'
+        // To hide the bottom border of Card of tasks'
+        // to achieve desired UI
         Row(
             modifier = Modifier
                 .padding(horizontal = 10.dp, vertical = 27.dp)
@@ -274,15 +287,29 @@ fun createText(text : String,
 
 @Composable
 fun createTaskUI(
-    task: ExternalModel
+    task: ExternalModel,
+    viewModel: TasksViewModel,
+    alarmManager: ScheduleAlarmSingleton,
+    context: Context
 ) {
     var iconClicked: ImageVector by remember{
         mutableStateOf(Icons.Filled.Close)
     }
+    var showDialog by remember{
+        mutableStateOf(false)
+    }
 
     handleTaskOperationClicks(imgVector = iconClicked,
-        task = task)
+        task = task,
+        showDialog = showDialog,
+        onDismissDialog = {
+            showDialog = !showDialog
+        },
+        viewModel = viewModel,
+        alarmManager = alarmManager,
+        context = context)
 
+    // task UI with operation icons
     Row(
         verticalAlignment = Alignment.CenterVertically
     ){
@@ -368,12 +395,15 @@ fun createTaskUI(
         ) {
             createIcon(imgVector = Icons.Filled.Check) {
                 iconClicked = Icons.Filled.Check
+                showDialog = !showDialog
             }
             createIcon(imgVector = Icons.Filled.Edit) {
                 iconClicked = Icons.Filled.Edit
+                showDialog = !showDialog
             }
             createIcon(imgVector = Icons.Filled.Delete) {
                 iconClicked = Icons.Filled.Delete
+                showDialog = !showDialog
             }
         }
     }
@@ -383,24 +413,22 @@ fun createTaskUI(
 @Composable
 fun handleTaskOperationClicks(
     imgVector: ImageVector,
-    task: ExternalModel
+    task: ExternalModel,
+    showDialog: Boolean,
+    onDismissDialog: () -> Unit,
+    viewModel: TasksViewModel,
+    alarmManager: ScheduleAlarmSingleton,
+    context: Context
 ) {
     when(imgVector){
         Icons.Filled.Check -> {
-            var show by rememberSaveable {
-                mutableStateOf(true)
-            }
-            LaunchedEffect(key1 = task.unique_id){
-                show = true
-            }
 
-            if (show) {
+            if (showDialog) {
                 showTaskOperationDialog(
-                    onDismissDialog = {
-                        show = false
-                    },
+                    onDismissDialog = onDismissDialog,
                     onConfirmBtnClicked = {
-                        show = false
+                        onDismissDialog.invoke()
+
                     },
                     dialogText = "Are you sure you want to mark this as completed ?"
                 )
@@ -408,13 +436,28 @@ fun handleTaskOperationClicks(
         }
         Icons.Filled.Edit -> {
             Log.e("Dhaval", "Edit Clicked")
+            if (showDialog) {
+                addTaskEventGoalDialog(
+                    onDismissDialog = onDismissDialog,
+                    viewModel = viewModel,
+                    alarmManager = alarmManager,
+                    context = context,
+                    task = task
+                )
+            }
         }
         Icons.Filled.Delete -> {
-            showTaskOperationDialog(
-                onDismissDialog = { /*TODO*/ },
-                onConfirmBtnClicked = { /*TODO*/ },
-                dialogText = "Are you sure you want to delete this ?"
-            )
+            if (showDialog) {
+                Log.e("Dhaval", "DELETE type : ${task.type} -- UNIQUE : ${task.unique_id}", )
+                showTaskOperationDialog(
+                    onDismissDialog = onDismissDialog,
+                    onConfirmBtnClicked = {
+                        onDismissDialog.invoke()
+                        viewModel.deleteTask(task /*task.type, listOf(task.unique_id)*/)
+                    },
+                    dialogText = "Are you sure you want to delete this ?"
+                )
+            }
         }
     }
 }
@@ -433,18 +476,13 @@ fun showTaskOperationDialog(
                 }
             },
             onDismissRequest = onDismissDialog, confirmButton = {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
                     Button(
                         onClick = {
                             onConfirmBtnClicked.invoke()
-                            onDismissDialog.invoke()
                         }
                     ) {
                         Text(text = "Yes")
                     }
-                }
             },
             text = {
                 Text(
@@ -472,14 +510,14 @@ fun createIcon(imgVector : ImageVector,
 @Preview(showBackground = true)
 @Composable
 fun taskUI() {
-    createTaskUI(
+    /*createTaskUI(
         task = ExternalModel(
             title = "hello world!!",
             description = "hello this is a testing description for this particular task." +
                     "sdflsdjflsdflksdflsdfklsj sadflsdafjklsaflsdafjsdlfsdlfjlsdkfjlsdj" +
                     "flsdjflsdjflsdjfklsdflsdjflsdfkls"
         )
-    )
+    )*/
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -488,39 +526,44 @@ fun addTaskEventGoalDialog(
     onDismissDialog: () -> Unit,
     viewModel: TasksViewModel,
     alarmManager: ScheduleAlarmSingleton,
-    context: Context
+    context: Context,
+    task: ExternalModel
 ) {
-    val uniqueId = Utility.generateUniqueId()
+
+    Log.e("Dhaval", "ID : ${task.id}" +
+            " UNIQUE : ${task.unique_id}")
+
+    val uniqueId = if(task.unique_id > 0) task.unique_id else Utility.generateUniqueId()
 
     var isTitleEmpty by rememberSaveable {
         mutableStateOf(false)
     }
     var title by remember {
-        mutableStateOf("")
+        mutableStateOf(task.title)
     }
     var description by remember {
-        mutableStateOf("")
+        mutableStateOf(task.description)
     }
 
     // Type (task, event, goal)
-    var typeSelected by remember {
-        mutableStateOf(managementList[0])
+    var typeSelected: String by remember {
+        mutableStateOf(if(task.type.isNotEmpty())task.type else managementList[0])
     }
 
     var reminderSelected by remember {
-        mutableStateOf(reminderList[0])
+        mutableStateOf(if(task.reminder_date > 0)task.reminder_date.toString() else reminderList[0])
     }
 
     var cal = Calendar.getInstance()
     cal.add(Calendar.HOUR_OF_DAY, 1)
     var dueDateTime by remember {
-        mutableStateOf(Utility.convertMillisToDate(cal.timeInMillis))
+        mutableStateOf(Utility.convertMillisToDate(if(task.due_date > 0) task.due_date else cal.timeInMillis))
     }
     var fromTime by remember {
-        mutableStateOf(Utility.convertMillisToDate(cal.timeInMillis))
+        mutableStateOf(Utility.convertMillisToDate(if(task.start_date > 0)task.start_date else cal.timeInMillis))
     }
     var toTime by remember {
-        mutableStateOf(Utility.convertMillisToDate(cal.timeInMillis))
+        mutableStateOf(Utility.convertMillisToDate(if(task.end_date > 0)task.start_date else cal.timeInMillis))
     }
     var notifyMe by rememberSaveable {
         mutableStateOf(false)
@@ -541,7 +584,7 @@ fun addTaskEventGoalDialog(
             createDropDownMenu(
                 menuTitle = "Type",
                 dropDownMenuList = managementList,
-                typeSelected = typeSelected,
+                selected = typeSelected,
                 onMenuSelected = {
                     typeSelected = it
                 }
@@ -694,7 +737,7 @@ fun addTaskEventGoalDialog(
                     menuTitle = "Notify before ",
                     dropDownMenuList = reminderList,
                     endingText = " mins",
-                    typeSelected = reminderSelected,
+                    selected = reminderSelected,
                     onMenuSelected = {
                         reminderSelected = it
                     }
@@ -722,16 +765,27 @@ fun addTaskEventGoalDialog(
                             isTitleEmpty = true
                         } else {
                             val dueDateTime = Utility.convertStringToMillis(dueDateTime)
-                            val task = Task(
+                            val startTime = Utility.convertStringToMillis(fromTime)
+                            val endTime = Utility.convertStringToMillis(toTime)
+
+                            val task = ExternalModel(
+                                id = task.id,
                                 unique_id = uniqueId,
                                 type = typeSelected,
                                 title = title,
                                 description = description,
                                 due_date = dueDateTime,
+                                start_date = startTime,
+                                end_date = endTime,
                                 reminder_date = if (notifyMe) (reminderSelected.toLong() * 1000) else 0L,
                                 created_at = cal.timeInMillis
                             )
-                            viewModel.insertTask(task)
+                            if (task.id > 0){
+                                viewModel.updateTask(task)
+                            }
+                            else {
+                                viewModel.insertTask(task)
+                            }
 
                             // schedule alarm on task creation
                             // if notify is checked
@@ -746,7 +800,7 @@ fun addTaskEventGoalDialog(
                     },
                     modifier = Modifier.padding(5.dp)
                 ) {
-                    Text(text = "Create")
+                    Text(text = if(task.id > 0) "Update" else "Create")
                 }
             }
         }
@@ -801,7 +855,7 @@ fun createDropDownMenu(
     menuTitle: String,
     dropDownMenuList: List<String>,
     endingText: String = "",
-    typeSelected: String,
+    selected: String,
     onMenuSelected: (String) -> Unit
 ) {
     var isExpanded by remember {
@@ -841,7 +895,7 @@ fun createDropDownMenu(
             val rotateArrow = animateIntAsState(targetValue = rotate)
 
             Text(
-                text = typeSelected,
+                text = selected,
                 style = MaterialTheme.typography.bodyMedium
             )
             Icon(
@@ -880,12 +934,12 @@ fun prevTaskManagement() {
 
     }*/
 
-    tasksEventsGoals(tasksEventsGoalsList = listOf(
+   /* tasksEventsGoalsListUI(tasksEventsGoalsList = listOf(
         ExternalModel(
             title = "hello world!!",
             description = "hello this is a testing description for this particular task." +
                     "sdflsdjflsdflksdflsdfklsj sadflsdafjklsaflsdafjsdlfsdlfjlsdkfjlsdj" +
                     "flsdjflsdjflsdjfklsdflsdjflsdfkls"
         )
-    ))
+    ))*/
 }

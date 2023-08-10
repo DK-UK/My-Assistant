@@ -34,12 +34,14 @@ class TasksViewModel(
         repository = Repository(db)
     }
 
+/*
     val allTasks: StateFlow<List<Task>> = getAllTasks()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(),
             initialValue = emptyList()
         )
+*/
 
 
     fun getAllTasksEventsGoals(): Flow<MutableList<ExternalModel>> {
@@ -62,21 +64,22 @@ class TasksViewModel(
     }
 
     //region Tasks Functions
-    fun insertTask(task : Task){
+    fun insertTask(task : ExternalModel){
         viewModelScope.launch {
             repository.insertTask(task)
         }
     }
 
-    fun updateTask(task : Task){
+    fun updateTask(task : ExternalModel){
         viewModelScope.launch {
             repository.updateTask(task)
         }
     }
 
-    fun deleteTask(vararg uniuqe_id : String){
+    fun deleteTask(task: ExternalModel /*type : String, uniuqe_id : List<Long>*/){
         viewModelScope.launch {
-            repository.deleteTask(*uniuqe_id)
+            Log.e("Dhaval", "deleteTask: VIEWMODEL", )
+            repository.deleteTask(task /*type, uniuqe_id*/)
         }
     }
 

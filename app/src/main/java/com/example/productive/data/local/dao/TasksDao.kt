@@ -17,7 +17,10 @@ interface TasksDao {
     suspend fun updateTask(task: Task)
 
     @Query("DELETE from Task where unique_id=:unique_id")
-    suspend fun deleteTask(vararg unique_id : String)
+    suspend fun deleteTask(unique_id : Long)
+
+    @Query("DELETE from Task where id=:id")
+    suspend fun delete(id : Int)
 
     @Query("SELECT * FROM Task where :whereClause=:whereClauseValue")
     suspend fun getTasks(whereClause : String, whereClauseValue : String) : List<Task>

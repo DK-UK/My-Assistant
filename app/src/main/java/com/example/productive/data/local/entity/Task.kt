@@ -20,6 +20,7 @@ data class Task(
 
 public fun Task.toExternalModel(
 ) = ExternalModel(
+    id = this.id,
     unique_id = this.unique_id,
     type = this.type,
     title = this.title,
@@ -48,11 +49,12 @@ data class Event(
 
 fun Event.toExternalModel(
 ) = ExternalModel(
+    id = this.id,
     unique_id = this.unique_id,
     type = this.type,
     title = this.title,
     description = this.description,
-   start_date = this.start_date,
+    start_date = this.start_date,
     end_date = this.end_date,
     reminder_date = this.reminder_date,
     created_at = this.created_at,
@@ -76,6 +78,7 @@ data class Goal(
 
 fun Goal.toExternalModel(
 ) = ExternalModel(
+    id = this.id,
     unique_id = this.unique_id,
     type = this.type,
     title = this.title,
