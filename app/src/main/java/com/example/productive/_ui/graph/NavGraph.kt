@@ -20,7 +20,8 @@ fun navGraph(
         startDestination = NavDestinations.DASHBOARD.name){
 
         composable(route = NavDestinations.DASHBOARD.name){
-            Dashboard(modifier)
+            Dashboard(modifier,
+                taskViewModel)
         }
 
         composable(route = NavDestinations.TASK_MANAGEMENT.name){

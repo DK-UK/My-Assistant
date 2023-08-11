@@ -76,10 +76,9 @@ class TasksViewModel(
         }
     }
 
-    fun deleteTask(task: ExternalModel /*type : String, uniuqe_id : List<Long>*/){
+    fun deleteTask(type : String, uniuqe_id : Long){
         viewModelScope.launch {
-            Log.e("Dhaval", "deleteTask: VIEWMODEL", )
-            repository.deleteTask(task /*type, uniuqe_id*/)
+            repository.deleteTask(type, uniuqe_id)
         }
     }
 

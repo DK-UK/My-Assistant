@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -78,25 +79,8 @@ import com.example.productive.Utility.Utility
 import com.example.productive._ui.reminder.ScheduleAlarmSingleton
 import com.example.productive._ui.viewModels.TasksViewModel
 import com.example.productive.data.local.entity.ExternalModel
-import com.example.productive.data.local.entity.Task
 import com.example.productive.ui.theme.Purple80
-import kotlinx.coroutines.flow.filter
 import java.util.Calendar
-
-
-val managementList = mutableListOf<String>(
-    "Tasks",
-    "Events",
-    "Goals"
-)
-val reminderList = mutableListOf<String>(
-    "1",
-    "5",
-    "10",
-    "30",
-    "60",
-    "120"
-)
 
 @Composable
 fun TaskManagement(
@@ -165,11 +149,13 @@ fun tasksEventsGoalsListUI(tasksEventsGoalsList: List<ExternalModel>,
                            alarmManager: ScheduleAlarmSingleton,
                            context: Context) {
     var clickedText by rememberSaveable {
-        mutableStateOf(managementList[0])
+        mutableStateOf(Utility.managementList[0])
     }
 
+    Log.e("Dhaval", "RESULT : ${tasksEventsGoalsList}", )
+
     val filteredResult = tasksEventsGoalsList.filter {
-        it.type == clickedText && it.completed_at == 0L
+        it.type == clickedText
     }
 
     Box(
@@ -223,7 +209,7 @@ fun tasksEventsGoalsListUI(tasksEventsGoalsList: List<ExternalModel>,
 
             Log.e("Dhaval", "tasksEventsGoals: value : ${tasksEventsGoalsList}")
 
-            managementList.forEach {
+            Utility.managementList.forEach {
 
                 if (it.equals(clickedText, ignoreCase = true)) {
                     Card(border = null,
@@ -311,16 +297,13 @@ fun createTaskUI(
 
     // task UI with operation icons
     Row(
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
     ){
 
         Surface(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = 10.dp,
-                    vertical = 5.dp
-                )
+                .padding(end = 10.dp)
                 .weight(1f),
             /* shadowElevation = 7.dp,*/
             shape = MaterialTheme.shapes.medium,
@@ -328,7 +311,7 @@ fun createTaskUI(
 
             ) {
             Column(
-                modifier = Modifier.padding(10.dp)
+                modifier = Modifier.padding(vertical = 20.dp, horizontal = 10.dp)
             ) {
 
                 Row(
@@ -357,7 +340,7 @@ fun createTaskUI(
                     ) {
                     Text(
                         text = task.description,
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f)
@@ -391,7 +374,12 @@ fun createTaskUI(
         }
 
         Column (
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.background(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = MaterialTheme.shapes.small
+            )
+                .fillMaxHeight()
         ) {
             createIcon(imgVector = Icons.Filled.Check) {
                 iconClicked = Icons.Filled.Check
@@ -423,12 +411,14 @@ fun handleTaskOperationClicks(
     when(imgVector){
         Icons.Filled.Check -> {
 
+            val completedAt = Utility.getTodaysDateInMillis()
+
             if (showDialog) {
                 showTaskOperationDialog(
                     onDismissDialog = onDismissDialog,
                     onConfirmBtnClicked = {
                         onDismissDialog.invoke()
-
+                        viewModel.updateTask(task.copy(completed_at = completedAt))
                     },
                     dialogText = "Are you sure you want to mark this as completed ?"
                 )
@@ -448,12 +438,13 @@ fun handleTaskOperationClicks(
         }
         Icons.Filled.Delete -> {
             if (showDialog) {
-                Log.e("Dhaval", "DELETE type : ${task.type} -- UNIQUE : ${task.unique_id}", )
+                Log.e("Dhaval", "DELETE type : ${task.type} id : ${task.id} -- UNIQUE : ${task.unique_id}", )
                 showTaskOperationDialog(
                     onDismissDialog = onDismissDialog,
                     onConfirmBtnClicked = {
                         onDismissDialog.invoke()
-                        viewModel.deleteTask(task /*task.type, listOf(task.unique_id)*/)
+                        viewModel.deleteTask(task.type, task.unique_id)
+//                        viewModel.deleteTask(task)
                     },
                     dialogText = "Are you sure you want to delete this ?"
                 )
@@ -547,11 +538,11 @@ fun addTaskEventGoalDialog(
 
     // Type (task, event, goal)
     var typeSelected: String by remember {
-        mutableStateOf(if(task.type.isNotEmpty())task.type else managementList[0])
+        mutableStateOf(if(task.type.isNotEmpty())task.type else Utility.managementList[0])
     }
 
     var reminderSelected by remember {
-        mutableStateOf(if(task.reminder_date > 0)task.reminder_date.toString() else reminderList[0])
+        mutableStateOf(if(task.reminder_date > 0)Utility.convertMillisToMins(task.reminder_date).toString() else Utility.reminderList[0])
     }
 
     var cal = Calendar.getInstance()
@@ -566,7 +557,7 @@ fun addTaskEventGoalDialog(
         mutableStateOf(Utility.convertMillisToDate(if(task.end_date > 0)task.start_date else cal.timeInMillis))
     }
     var notifyMe by rememberSaveable {
-        mutableStateOf(false)
+        mutableStateOf(task.reminder_date > 0)
     }
 
     Dialog(
@@ -583,7 +574,7 @@ fun addTaskEventGoalDialog(
 
             createDropDownMenu(
                 menuTitle = "Type",
-                dropDownMenuList = managementList,
+                dropDownMenuList = Utility.managementList,
                 selected = typeSelected,
                 onMenuSelected = {
                     typeSelected = it
@@ -735,7 +726,7 @@ fun addTaskEventGoalDialog(
                 // Notify
                 createDropDownMenu(
                     menuTitle = "Notify before ",
-                    dropDownMenuList = reminderList,
+                    dropDownMenuList = Utility.reminderList,
                     endingText = " mins",
                     selected = reminderSelected,
                     onMenuSelected = {
@@ -777,7 +768,7 @@ fun addTaskEventGoalDialog(
                                 due_date = dueDateTime,
                                 start_date = startTime,
                                 end_date = endTime,
-                                reminder_date = if (notifyMe) (reminderSelected.toLong() * 1000) else 0L,
+                                reminder_date = if (notifyMe) Utility.convertMinsToMillis(reminderSelected.toLong()) else 0L,
                                 created_at = cal.timeInMillis
                             )
                             if (task.id > 0){

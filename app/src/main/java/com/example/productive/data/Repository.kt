@@ -18,10 +18,10 @@ class Repository(private val database: ProductiveAppDatabase) {
 
     //region Task Table Functions
     suspend fun insertTask(task : ExternalModel){
-        if (task.type.contains("tasks")) {
+        if (task.type.lowercase().contains("tasks")) {
             database.taskDao().insertTask(task.toTask())
         }
-        else if(task.type.contains("events")){
+        else if(task.type.lowercase().contains("events")){
             database.eventDao().insertEvent(task.toEvent())
         }
         else{
@@ -30,11 +30,10 @@ class Repository(private val database: ProductiveAppDatabase) {
     }
 
     suspend fun updateTask(task : ExternalModel){
-        database.taskDao().updateTask(task.toTask())
-        if (task.type.contains("tasks")) {
+        if (task.type.lowercase().contains("tasks")) {
             database.taskDao().updateTask(task.toTask())
         }
-        else if(task.type.contains("events")){
+        else if(task.type.lowercase().contains("events")){
             database.eventDao().updateEvent(task.toEvent())
         }
         else{
@@ -42,12 +41,12 @@ class Repository(private val database: ProductiveAppDatabase) {
         }
     }
 
-    suspend fun deleteTask(task: ExternalModel /*type : String, unique_id : List<Long>*/){
-//        if (type.lowercase(Locale.getDefault()).contains("tasks")) {
+    suspend fun deleteTask(type : String, unique_id : Long){
+        if (type.lowercase(Locale.getDefault()).contains("tasks")) {
             Log.e("Dhaval", "REPOSITORY TASKS TYPE", )
-//            database.taskDao().deleteTask(unique_id[0])
-            database.taskDao().delete(task.toTask().id)
-      /*  }
+            val count = database.taskDao().deleteTask(unique_id)
+            Log.e("Dhaval", "deleteTask: delete count : ${count}", )
+        }
         else if(type.lowercase(Locale.getDefault()).contains("events")){
             Log.e("Dhaval", "REPOSITORY EVENTS TYPE", )
             database.eventDao().deleteEvent(unique_id)
@@ -55,17 +54,17 @@ class Repository(private val database: ProductiveAppDatabase) {
         else{
             Log.e("Dhaval", "REPOSITORY GOALS TYPE", )
             database.goalDao().deleteGoal(unique_id)
-        }*/
+        }
     }
 
     suspend fun getTasks(type : String, whereClause : String, whereClauseValue : String) : List<ExternalModel>{
          database.taskDao().getTasks(whereClause, whereClauseValue)
-        if (type.contains("tasks")) {
+        if (type.lowercase().contains("tasks")) {
             return database.taskDao().getTasks(whereClause, whereClauseValue).map {
                 it.toExternalModel()
             }
         }
-        else if(type.contains("events")){
+        else if(type.lowercase().contains("events")){
             return database.eventDao().getEvents(whereClause, whereClauseValue).map {
                 it.toExternalModel()
             }
