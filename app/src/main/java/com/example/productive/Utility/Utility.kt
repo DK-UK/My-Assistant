@@ -2,7 +2,6 @@ package com.example.productive.Utility
 
 import android.annotation.SuppressLint
 import java.text.SimpleDateFormat
-import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -60,4 +59,36 @@ object Utility {
         val cal = Calendar.getInstance()
         return cal.timeInMillis
     }
+
+    fun secondsToMinutesSeconds(seconds: Int): String {
+
+        val minutes = seconds / 60
+        val remainingSeconds = seconds % 60
+        return String.format("%02d:%02d", minutes, remainingSeconds)
+    }
+
+    fun formatTimerDigits(timeDigit : Int) : String{
+        return String.format("%02d", timeDigit)
+    }
+    fun convertLongToTime(long : Long, type : String): Int {
+        val cal = Calendar.getInstance()
+        cal.timeInMillis = long
+
+        return when (type) {
+            "HOUR" -> {
+                cal.get(Calendar.HOUR_OF_DAY)
+            }
+
+            "MIN" -> {
+                cal.get(Calendar.MINUTE)
+            }
+
+            "SEC" -> {
+                cal.get(Calendar.SECOND)
+            }
+
+            else -> 0
+        }
+    }
+
 }

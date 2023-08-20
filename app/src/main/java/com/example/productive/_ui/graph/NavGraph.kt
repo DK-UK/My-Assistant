@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import com.example.productive.NavDestinations
 import com.example.productive._ui.Dashboard
 import com.example.productive._ui.TaskManagement
+import com.example.productive._ui.Timer
 import com.example.productive._ui.viewModels.TasksViewModel
 
 @Composable
@@ -29,7 +30,7 @@ fun navGraph(
         }
 
         composable(route = NavDestinations.FOCUS_TIMER.name){
-
+            Timer(modifier)
         }
 
         composable(route = NavDestinations.INSIGHT.name){
