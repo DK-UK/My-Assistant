@@ -15,7 +15,9 @@ import com.example.productive._ui.viewModels.TasksViewModel
 fun navGraph(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    taskViewModel: TasksViewModel
+    taskViewModel: TasksViewModel,
+    onShowCountDownTimer: (Int, Int, Int) -> Unit,
+    onShowTimerScreen: () -> Unit
 ) {
     NavHost(navController = navController,
         startDestination = NavDestinations.DASHBOARD.name){
@@ -30,7 +32,10 @@ fun navGraph(
         }
 
         composable(route = NavDestinations.FOCUS_TIMER.name){
-            Timer(modifier)
+            Timer(modifier,
+                onShowCountDownTimer = onShowCountDownTimer,
+                onShowTimerScreen
+            )
         }
 
         composable(route = NavDestinations.INSIGHT.name){

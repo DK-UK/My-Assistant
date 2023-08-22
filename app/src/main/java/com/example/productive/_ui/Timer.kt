@@ -1,32 +1,35 @@
 package com.example.productive._ui
 
+import android.graphics.Paint.Align
+import android.graphics.drawable.GradientDrawable
 import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.items
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DrawerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -34,15 +37,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.graphics.drawscope.DrawStyle
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import com.example.productive.R
 import com.example.productive.Utility.Utility
 import kotlinx.coroutines.delay
-import java.util.Calendar
 
 private val hours = (0..24).toList()
 private val minsAndSecs = (0..60).toList()
@@ -50,57 +59,94 @@ private val minsAndSecs = (0..60).toList()
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun Timer(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onShowCountDownTimer: (Int, Int, Int) -> Unit = { hr, min, sec -> },
+    onShowTimerScreen: () -> Unit
 ) {
+    var hour by remember {
+        mutableStateOf(0)
+    }
+    var min by remember {
+        mutableStateOf(0)
+    }
+    var sec by remember {
+        mutableStateOf(0)
+    }
 
     Surface(modifier = modifier) {
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
-        ){
-            drawTimer(list = hours, selectedTimeDigit = {
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                drawTimer(list = hours, { hr ->
+                    hour = hr
+                })
 
-            })
-            drawTimer(list = minsAndSecs, selectedTimeDigit = {
+                drawTimer(list = minsAndSecs, { mins ->
+                    min = mins
+                })
+                drawTimer(list = minsAndSecs, { secs ->
+                    sec = secs
+                })
+            }
 
-            })
-            drawTimer(list = minsAndSecs, selectedTimeDigit = {
-
-            })
-
+            Column(
+                verticalArrangement = Arrangement.Bottom,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Button(
+                    modifier = Modifier.clip(CircleShape),
+                    onClick = {
+                        // redirect to countdown screen
+                        onShowCountDownTimer.invoke(hour, min, sec)
+                        onShowTimerScreen.invoke()
+                    }) {
+                    Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = "Play button")
+                }
+            }
         }
+
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun drawTimer(
-    list : List<Int>,
-    selectedTimeDigit : (Int) -> Unit
+    list: List<Int>,
+    onSelectedTimeDigit: (Int) -> Unit
 ) {
     var lazyState = rememberLazyListState(Int.MAX_VALUE / 2 - (Int.MAX_VALUE / 2) % list.size)
     var flingBehavior = rememberSnapFlingBehavior(lazyListState = lazyState)
+    val firstVisibleItem = lazyState.firstVisibleItemIndex % list.size
+    val centerIndex = firstVisibleItem + 2
 
     LazyColumn(
         state = lazyState,
         flingBehavior = flingBehavior,
         modifier = Modifier
-            .height(300.dp)
+            .height(250.dp)
             .padding(horizontal = 15.dp)
-    ){
+    ) {
 
-        items(Int.MAX_VALUE){
+        items(Int.MAX_VALUE) {
             val index = it % list.size
             val item = list[index]
 
-            Log.e("Dhaval", "drawTimer: index : ${index}", )
-            if (-1 == index) {
+            if ((centerIndex) == index) {
                 Text(
                     text = Utility.formatTimerDigits(item),
                     style = MaterialTheme.typography.displayMedium
+                        .copy(
+                            textAlign = TextAlign.Center
+                        )
                 )
-            }else{
+                onSelectedTimeDigit.invoke(item)
+            } else {
                 Text(
                     text = Utility.formatTimerDigits(item),
                     style = MaterialTheme.typography.displaySmall,
@@ -110,8 +156,122 @@ fun drawTimer(
         }
     }
 }
-@Preview
+
+@Composable
+fun CountDownScreen(
+    hours: Int,
+    mins: Int,
+    secs: Int,
+    onTimerStop : () -> Unit
+) {
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = Color.White)
+    ) {
+        Log.e("Dhaval", "HOUR : ${hours} -- MIN : ${mins} -- SECS : ${secs}")
+        Surface(
+            shadowElevation = 7.dp,
+            modifier = Modifier
+                .zIndex(5f),
+            color = MaterialTheme.colorScheme.primaryContainer
+        ) {
+
+            var totalMillis = (hours * 3600 + mins * 60 + secs) * 1000L
+            val timer: String by produceState(initialValue = "00:00:00") {
+
+                while (totalMillis > 0L) {
+
+                    val remainingHours = totalMillis / 3600000
+                    val remainingMinutes = (totalMillis % 3600000) / 60000
+                    val remainingSeconds = (totalMillis % 60000) / 1000
+
+                    value = String.format(
+                        "%02d:%02d:%02d",
+                        remainingHours,
+                        remainingMinutes,
+                        remainingSeconds
+                    )
+                    totalMillis -= 1000L
+                    delay(1000)
+                }
+            }
+
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+
+                Log.e("Dhaval", "TIMER : ${timer}")
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 200.dp)
+                    /*.drawBehind {
+                        this.drawCircle(
+                            style = Fill,
+                            radius = this.size.maxDimension / 2,
+                            color = Color.Magenta,
+                            center = Offset(size.width / 2, size.height / 2)
+                        )
+                    }*/
+                ) {
+
+                    Text(
+                        text = timer, style = MaterialTheme.typography.displayMedium
+                    )
+                    Text(
+                        text = "Total ${hours} hours ${mins} minutes ${secs} seconds",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                Column(
+                    verticalArrangement = Arrangement.Bottom,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .padding(vertical = 30.dp),
+                        horizontalArrangement = Arrangement.SpaceAround,
+                    ) {
+                        Button(
+                            modifier = Modifier.clip(CircleShape),
+                            onClick = {
+                                // redirect to timer screen
+                                onTimerStop.invoke()
+                            }) {
+                            Icon(
+                                painterResource(id = R.drawable.ic_stop),
+                                contentDescription = "Stop button"
+                            )
+                        }
+                        Button(
+                            modifier = Modifier.clip(CircleShape),
+                            onClick = {
+                                // pause the timer
+
+                            }) {
+                            Icon(
+                                painterResource(id = if (true) R.drawable.ic_pause else R.drawable.ic_play),
+                                contentDescription = "Play button"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
 @Composable
 fun prevTimer() {
-    Timer()
+//    Timer(onShowTimerScreen = onShowTimerScreen)
+    CountDownScreen(hours = 12, mins = 5, secs = 45,
+        {
+
+        })
 }

@@ -1,6 +1,7 @@
 package com.example.productive.Utility
 
 import android.annotation.SuppressLint
+import android.util.Log
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -91,4 +92,15 @@ object Utility {
         }
     }
 
+    fun convertTimerToLong(hour : Int, min : Int, sec : Int){
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.YEAR, 0)
+        cal.set(Calendar.MONTH, 0)
+        cal.set(Calendar.DAY_OF_MONTH, 0)
+        cal.set(Calendar.HOUR_OF_DAY, hour)
+        cal.set(Calendar.MINUTE, min)
+        cal.set(Calendar.SECOND, sec)
+
+        Log.e("Dhaval", "convertTimerToLong: ${cal.timeInMillis}", )
+    }
 }

@@ -23,6 +23,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.productive._ui.CountDownScreen
 import com.example.productive._ui.SplashScreen
 import com.example.productive._ui.graph.navGraph
 import com.example.productive._ui.viewModels.TasksViewModel
@@ -58,29 +63,61 @@ fun MainScreen(
     taskViewModel: TasksViewModel
 ) {
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = (navHostController.currentDestination?.route)?: "Dashboard",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                },
-                modifier = Modifier,
-                colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
-            )
-        },
-        bottomBar = {
-            BottomNavBar(navHostController = navHostController)
+    var showTimerScreen by remember{
+        mutableStateOf(false)
+    }
+    var hour by remember {
+        mutableStateOf(0)
+    }
+    var min by remember {
+        mutableStateOf(0)
+    }
+    var sec by remember {
+        mutableStateOf(0)
+    }
+
+
+    val onShowCountDownTimer = { hr:Int, mins:Int, secs:Int ->
+        hour = hr
+        min = mins
+        sec = secs
+    }
+
+    if (showTimerScreen){
+        CountDownScreen(hours = hour, mins = min, secs = sec,
+            onTimerStop = {
+                showTimerScreen = !showTimerScreen
+                navHostController.navigate(NavDestinations.FOCUS_TIMER.name)
+            })
+    }
+    else {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = (navHostController.currentDestination?.route) ?: "Dashboard",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    },
+                    modifier = Modifier,
+                    colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
+                )
+            },
+            bottomBar = {
+                BottomNavBar(navHostController = navHostController)
+            }
+        ) { it ->
+            navGraph(
+                navController = navHostController,
+                modifier = Modifier.padding(it),
+                taskViewModel,
+                onShowCountDownTimer = onShowCountDownTimer
+            ) {
+                showTimerScreen = !showTimerScreen
+            }
         }
-    ) {it->
-        navGraph(
-            navController = navHostController,
-            modifier = Modifier.padding(it),
-            taskViewModel
-            )
     }
 }
 
