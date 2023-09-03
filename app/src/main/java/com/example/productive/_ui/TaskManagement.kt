@@ -49,6 +49,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ShapeDefaults
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarData
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -76,6 +78,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.productive.R
 import com.example.productive.Utility.Utility
+import com.example.productive._ui.reminder.AskNotificationPermission
 import com.example.productive._ui.reminder.ScheduleAlarmSingleton
 import com.example.productive._ui.viewModels.TasksViewModel
 import com.example.productive.data.local.entity.ExternalModel
@@ -375,10 +378,11 @@ fun createTaskUI(
 
         Column (
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.background(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = MaterialTheme.shapes.small
-            )
+            modifier = Modifier
+                .background(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = MaterialTheme.shapes.small
+                )
                 .fillMaxHeight()
         ) {
             createIcon(imgVector = Icons.Filled.Check) {
@@ -558,6 +562,27 @@ fun addTaskEventGoalDialog(
     }
     var notifyMe by rememberSaveable {
         mutableStateOf(task.reminder_date > 0)
+    }
+    var showPermissionRequiredSnackBar by remember {
+        mutableStateOf(false)
+    }
+    if(showPermissionRequiredSnackBar){
+        Snackbar(dismissAction = {
+            showPermissionRequiredSnackBar = false
+        }){
+            Column() {
+                Text(text = "Permission Required")
+                Text(text = "You can enable this permission in settings")
+            }
+        }
+    }
+
+    if (notifyMe){
+        AskNotificationPermission(isNotificationGranted = {
+            if (!it){
+                showPermissionRequiredSnackBar = true
+            }
+        })
     }
 
     Dialog(
@@ -783,7 +808,8 @@ fun addTaskEventGoalDialog(
                             if (notifyMe) {
                                 alarmManager.scheduleOrUpdateAlarm(
                                     dueDateTime - (reminderSelected.toLong() * 60 * 1000),
-                                    uniqueId.toInt()
+                                    uniqueId.toInt(),
+                                    title
                                 )
                             }
                             onDismissDialog.invoke()

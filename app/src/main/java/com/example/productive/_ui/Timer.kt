@@ -2,23 +2,37 @@ package com.example.productive._ui
 
 import android.graphics.Paint.Align
 import android.graphics.drawable.GradientDrawable
+import android.media.AudioManager
+import android.media.MediaPlayer
+import android.media.RingtoneManager
+import android.media.audiofx.EnvironmentalReverb.Settings
 import android.util.Log
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
@@ -30,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -37,17 +52,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.example.productive.R
 import com.example.productive.Utility.Utility
@@ -78,6 +100,7 @@ fun Timer(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
@@ -103,7 +126,7 @@ fun Timer(
                     modifier = Modifier.clip(CircleShape),
                     onClick = {
                         // redirect to countdown screen
-                        onShowCountDownTimer.invoke(hour, min, sec)
+                        onShowCountDownTimer.invoke(0, 0, 2)
                         onShowTimerScreen.invoke()
                     }) {
                     Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = "Play button")
@@ -123,8 +146,9 @@ fun drawTimer(
     var lazyState = rememberLazyListState(Int.MAX_VALUE / 2 - (Int.MAX_VALUE / 2) % list.size)
     var flingBehavior = rememberSnapFlingBehavior(lazyListState = lazyState)
     val firstVisibleItem = lazyState.firstVisibleItemIndex % list.size
-    val centerIndex = firstVisibleItem + 2
+    val centerIndex = firstVisibleItem + list.indexOf(list[2])
 
+    Log.e("Dhaval", "drawTimer: firstItem : ${firstVisibleItem} -- centerIndex : ${centerIndex}", )
     LazyColumn(
         state = lazyState,
         flingBehavior = flingBehavior,
@@ -162,9 +186,23 @@ fun CountDownScreen(
     hours: Int,
     mins: Int,
     secs: Int,
-    onTimerStop : () -> Unit
+    onTimerStop: () -> Unit
 ) {
 
+    var totalMillis = (hours * 3600 + mins * 60 + secs) * 1000L
+    var pauseTimer by remember {
+        mutableStateOf(false)
+    }
+
+    var isSilentBtnClicked by remember {
+        mutableStateOf(false)
+    }
+
+    if (isSilentBtnClicked){
+        Timer {
+
+        }
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -178,10 +216,9 @@ fun CountDownScreen(
             color = MaterialTheme.colorScheme.primaryContainer
         ) {
 
-            var totalMillis = (hours * 3600 + mins * 60 + secs) * 1000L
-            val timer: String by produceState(initialValue = "00:00:00") {
+            val timer: String by produceState(initialValue = "00:00:00", key1 = pauseTimer) {
 
-                while (totalMillis > 0L) {
+                while (totalMillis >= 0L && !pauseTimer) {
 
                     val remainingHours = totalMillis / 3600000
                     val remainingMinutes = (totalMillis % 3600000) / 60000
@@ -197,6 +234,7 @@ fun CountDownScreen(
                     delay(1000)
                 }
             }
+
 
             Column(
                 modifier = Modifier.fillMaxSize()
@@ -232,8 +270,10 @@ fun CountDownScreen(
                     modifier = Modifier.fillMaxSize()
                 ) {
 
+
                     Row(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
                             .padding(vertical = 30.dp),
                         horizontalArrangement = Arrangement.SpaceAround,
                     ) {
@@ -252,26 +292,104 @@ fun CountDownScreen(
                             modifier = Modifier.clip(CircleShape),
                             onClick = {
                                 // pause the timer
-
+                                pauseTimer = !pauseTimer
                             }) {
                             Icon(
-                                painterResource(id = if (true) R.drawable.ic_pause else R.drawable.ic_play),
+                                painterResource(id = if (pauseTimer) R.drawable.ic_play else R.drawable.ic_pause),
                                 contentDescription = "Play button"
                             )
                         }
                     }
                 }
             }
+
+            if(timer == "00:00:00"){
+                // show time out screen
+                timeOutScreen {
+                    onTimerStop.invoke()
+                }
+            }
         }
     }
 }
 
+@Composable
+fun timeOutScreen(
+    modifier : Modifier = Modifier,
+    isSilentBtnClicked : () -> Unit
+) {
+    val context = LocalContext.current
+
+    /*val size = 180
+    val alarmSize by produceState(initialValue = size){
+        while(size == (size / 2 + 50)){
+            value = value - 10
+            delay(200)
+        }
+        while (value == size){
+            value = value + 10
+            delay(200)
+        }
+    }*/
+
+    // Sound effect for time out
+
+
+    DisposableEffect(Unit){
+        var ringtone = RingtoneManager.getActualDefaultRingtoneUri(context, RingtoneManager.TYPE_RINGTONE)
+        var mediaPlayer = MediaPlayer.create(context, ringtone)
+        mediaPlayer.start()
+        onDispose {
+            ringtone = null
+            mediaPlayer.release()
+        }
+    }
+    Surface(
+        modifier = modifier.fillMaxSize()
+    ) {
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(bottom = 100.dp)
+        ) {
+
+            Image(painterResource(id = R.drawable.ic_alarm), contentDescription = "Alarm",
+                modifier = Modifier
+                    .size(180.dp)
+                    .alpha(0.8f)
+                    .rotate(0f)
+            )
+        }
+        Column(
+            verticalArrangement = Arrangement.Bottom,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(vertical = 20.dp)
+        ) {
+            Button(onClick = isSilentBtnClicked,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 25.dp)
+            ) {
+                Text(text = "Silent",
+                )
+            }
+        }
+    }
+}
+
+
 @Preview(showBackground = true)
 @Composable
 fun prevTimer() {
-//    Timer(onShowTimerScreen = onShowTimerScreen)
+   /* Timer(onShowTimerScreen = {
+
+    })
     CountDownScreen(hours = 12, mins = 5, secs = 45,
         {
 
-        })
+        })*/
+    timeOutScreen {
+
+    }
 }

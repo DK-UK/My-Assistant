@@ -9,5 +9,8 @@ class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context : Context?, intent : Intent?) {
         Log.e("Dhaval", "onReceive: CALLED", )
         // show notification for due task
+        if (intent != null && intent.hasExtra("UNIQUE_ID")){
+            showNotification(context!!, intent.getStringExtra("TITLE")!!)
+        }
     }
 }
