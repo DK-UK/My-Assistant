@@ -4,7 +4,7 @@ import androidx.room.PrimaryKey
 
 data class ExternalModel(
     @PrimaryKey(autoGenerate = true)
-    val id : Int = 0,
+    var id : Int = 0,
     var unique_id : Long = 0,
     var type : String = "",
     var title : String = "",

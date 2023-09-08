@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "Task")
 data class Task(
     @PrimaryKey(autoGenerate = true)
-    val id : Int = 0,
+    var id : Int = 0,
     var unique_id : Long = 0,
     var type : String = "",
     var title : String = "",
@@ -35,7 +35,7 @@ public fun Task.toExternalModel(
 @Entity(tableName = "Event")
 data class Event(
     @PrimaryKey(autoGenerate = true)
-    val id : Int = 0,
+    var id : Int = 0,
     var unique_id : Long = 0,
     var type : String = "",
     var title : String = "",
@@ -64,7 +64,7 @@ fun Event.toExternalModel(
 @Entity(tableName = "Goal")
 data class Goal(
     @PrimaryKey(autoGenerate = true)
-    val id : Int = 0,
+    var id : Int = 0,
     var unique_id : Long = 0,
     var type : String = "",
     var title : String = "",
