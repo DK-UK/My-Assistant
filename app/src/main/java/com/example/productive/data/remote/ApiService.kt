@@ -1,56 +1,29 @@
 package com.example.productive.data.remote
 
-import android.util.Log
+import androidx.lifecycle.LiveData
 import com.example.productive.data.local.entity.ExternalModel
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.android.Android
-import io.ktor.client.features.DefaultRequest
-import io.ktor.client.features.get
-import io.ktor.client.features.json.JsonFeature
-import io.ktor.client.features.json.JsonSerializer
-import io.ktor.client.features.json.serializer.KotlinxSerializer
-import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.request.post
-import io.ktor.client.request.url
-import io.ktor.client.statement.HttpResponse
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.POST
 
-class ApiService {
-    private val GET_ALL_TASKS_URL = "http://192.168.56.1:8080/tasks/all"
-    private val POST_ADD_TASKS_URL = "http://192.168.56.1:8080/tasks/add"
+interface ApiService {
 
-    private val client = HttpClient(Android){
-        install(DefaultRequest){
-            header(HttpHeaders.ContentType, ContentType.Application.Json)
-        }
-        install(JsonFeature){
-            serializer = KotlinxSerializer(kotlinx.serialization.json.Json {
-                isLenient = true
-                prettyPrint = true
-                ignoreUnknownKeys = true
-            })
-        }
-        engine {
-            connectTimeout = 100_00
-            socketTimeout = 100_00
-        }
-    }
+    @GET("tasks/all")
+    suspend fun getAllTasks() : List<ExternalModel>
 
-    suspend fun test(){
-        val response : HttpResponse = client.get("https://ktor.io/")
-        Log.e("Dhaval", "CLIENT : ${response.status} -- ${response.content}", )
-    }
+    @POST("tasks/add")
+    suspend fun postTasks(@Body body : List<ExternalModel>)
+}
 
-    suspend fun getAllTasksFromRemote() : List<ExternalModel> {
-        return client.get<List<ExternalModel>> {
-            url(GET_ALL_TASKS_URL)
-        }
-    }
-    suspend fun postTasksToRemote(tasks : List<ExternalModel>){
-        client.post<List<ExternalModel>>(urlString = POST_ADD_TASKS_URL){
-            body = tasks
-        }
+object RetrofitHelper{
+    val BASE_URL = "https://productive-backend.onrender.com/"
+    fun getApiService() : ApiService {
+        return Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ApiService::class.java)
     }
 }

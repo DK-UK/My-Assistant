@@ -15,7 +15,9 @@ data class ExternalModel(
     var end_date : Long = 0, // relevant to due_date
     var reminder_date : Long = 0, // store subtracted date from due_date to schedule for notification
     var created_at : Long = 0,
-    var completed_at : Long = 0
+    var completed_at : Long = 0,
+    var is_updated : Boolean = false,
+    var is_deleted : Boolean = false
 )
 
 fun ExternalModel.toTask() = Task(

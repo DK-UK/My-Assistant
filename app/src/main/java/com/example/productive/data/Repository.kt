@@ -1,7 +1,6 @@
 package com.example.productive.data
 
 import android.util.Log
-import androidx.compose.ui.text.toLowerCase
 import com.example.productive.data.local.db.ProductiveAppDatabase
 import com.example.productive.data.local.entity.Event
 import com.example.productive.data.local.entity.ExternalModel
@@ -11,10 +10,12 @@ import com.example.productive.data.local.entity.toEvent
 import com.example.productive.data.local.entity.toExternalModel
 import com.example.productive.data.local.entity.toGoal
 import com.example.productive.data.local.entity.toTask
+import com.example.productive.data.remote.ApiService
 import kotlinx.coroutines.flow.Flow
 import java.util.Locale
 
-class Repository(private val database: ProductiveAppDatabase) {
+class Repository(private val database: ProductiveAppDatabase,
+    private val apiService: ApiService) {
 
     //region Task Table Functions
     suspend fun insertTask(task : ExternalModel){
@@ -91,5 +92,15 @@ class Repository(private val database: ProductiveAppDatabase) {
     }
     //endregion
 
+    suspend fun getTaskFromRemote()  {
+        val tasks = apiService.getAllTasks()
+        tasks.forEach {
+            insertTask(it)
+        }
+    }
 
+    suspend fun postTasks(tasks : List<ExternalModel>){
+        // query to fetch all newly updated and deleted records
+        apiService.postTasks(tasks)
+    }
 }

@@ -17,8 +17,8 @@ interface GoalDao {
     @Update
     suspend fun updateGoal(goal : Goal)
 
-    @Query("DELETE from Goal where unique_id=:unique_id")
-    suspend fun deleteGoal(unique_id : Long)
+    @Query("UPDATE Goal set is_deleted=:is_deleted where unique_id=:unique_id")
+    suspend fun deleteGoal(unique_id : Long, is_deleted : Boolean = true)
 
     @Query("SELECT * FROM Goal where :whereClause=:whereClauseValue")
     suspend fun getGoals(whereClause : String, whereClauseValue : String) : List<Goal>

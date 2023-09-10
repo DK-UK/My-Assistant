@@ -15,7 +15,9 @@ data class Task(
     var due_date : Long = 0,
     var reminder_date : Long = 0, // store subtracted date from due_date to schedule for notification
     var created_at : Long = 0,
-    var completed_at : Long = 0
+    var completed_at : Long = 0,
+    var is_updated : Boolean = false,
+    var is_deleted : Boolean = false
 )
 
 public fun Task.toExternalModel(
@@ -29,7 +31,9 @@ public fun Task.toExternalModel(
     due_date = this.due_date,
     reminder_date = this.reminder_date,
     created_at = this.created_at,
-    completed_at = this.completed_at
+    completed_at = this.completed_at,
+    is_updated = this.is_updated,
+    is_deleted = this.is_deleted
 )
 
 @Entity(tableName = "Event")
@@ -44,7 +48,9 @@ data class Event(
     var end_date : Long = 0,
     var reminder_date : Long = 0, // store subtracted date from due_date to schedule for notification
     var created_at : Long = 0,
-    var completed_at : Long = 0
+    var completed_at : Long = 0,
+    var is_updated : Boolean = false,
+    var is_deleted : Boolean = false
 )
 
 fun Event.toExternalModel(
@@ -58,7 +64,9 @@ fun Event.toExternalModel(
     end_date = this.end_date,
     reminder_date = this.reminder_date,
     created_at = this.created_at,
-    completed_at = this.completed_at
+    completed_at = this.completed_at,
+    is_updated = this.is_updated,
+    is_deleted = this.is_deleted
 )
 
 @Entity(tableName = "Goal")
@@ -73,7 +81,9 @@ data class Goal(
     var end_date : Long = 0, // relevant to due_date
     var reminder_date : Long = 0, // store subtracted date from due_date to schedule for notification
     var created_at : Long = 0,
-    var completed_at : Long = 0
+    var completed_at : Long = 0,
+    var is_updated : Boolean = false,
+    var is_deleted : Boolean = false
 )
 
 fun Goal.toExternalModel(
@@ -87,5 +97,7 @@ fun Goal.toExternalModel(
     end_date = this.end_date,
     reminder_date = this.reminder_date,
     created_at = this.created_at,
-    completed_at = this.completed_at
+    completed_at = this.completed_at,
+    is_updated = this.is_updated,
+    is_deleted = this.is_deleted
 )

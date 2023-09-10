@@ -447,6 +447,7 @@ fun handleTaskOperationClicks(
                     onDismissDialog = onDismissDialog,
                     onConfirmBtnClicked = {
                         onDismissDialog.invoke()
+                        task.is_deleted = true
                         viewModel.deleteTask(task.type, task.unique_id)
 //                        viewModel.deleteTask(task)
                     },
@@ -794,7 +795,8 @@ fun addTaskEventGoalDialog(
                                 start_date = startTime,
                                 end_date = endTime,
                                 reminder_date = if (notifyMe) Utility.convertMinsToMillis(reminderSelected.toLong()) else 0L,
-                                created_at = cal.timeInMillis
+                                created_at = cal.timeInMillis ,
+                                is_updated = true
                             )
                             if (task.id > 0){
                                 viewModel.updateTask(task)

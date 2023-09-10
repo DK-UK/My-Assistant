@@ -14,6 +14,7 @@ import com.example.productive.data.local.entity.ExternalModel
 import com.example.productive.data.local.entity.Goal
 import com.example.productive.data.local.entity.Task
 import com.example.productive.data.local.entity.toExternalModel
+import com.example.productive.data.remote.RetrofitHelper
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -31,7 +32,8 @@ class TasksViewModel(
 
     init{
         val db = ProductiveAppDatabase.getInstance(app)
-        repository = Repository(db)
+        val apiService = RetrofitHelper.getApiService()
+        repository = Repository(db, apiService)
     }
 
 /*
@@ -81,17 +83,17 @@ class TasksViewModel(
             repository.deleteTask(type, uniuqe_id)
         }
     }
-
-    fun getAllTasks() : Flow<List<Task>> {
-        return repository.getAllTasks()
-    }
-
-    fun getAllEvents() : Flow<List<Event>> {
-        return repository.getAllEvents()
-    }
-
-    fun getAllGoals() : Flow<List<Goal>> {
-        return repository.getAllGoals()
-    }
     //endregion
+
+    fun getAllTasksFromRemote() {
+        viewModelScope.launch {
+            repository.getTaskFromRemote()
+        }
+    }
+
+    fun postTasks(){
+        viewModelScope.launch {
+//            repository.postTasks()
+        }
+    }
 }

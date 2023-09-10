@@ -16,8 +16,8 @@ interface EventDao {
     @Update
     suspend fun updateEvent(event: Event)
 
-    @Query("DELETE from Event where unique_id=:unique_id")
-    suspend fun deleteEvent(unique_id : Long)
+    @Query("UPDATE Event set is_deleted=:is_deleted where unique_id=:unique_id")
+    suspend fun deleteEvent(unique_id : Long, is_deleted : Boolean = true)
 
     @Query("SELECT * FROM Event where :whereClause=:whereClauseValue")
     suspend fun getEvents(whereClause : String, whereClauseValue : String) : List<Event>
