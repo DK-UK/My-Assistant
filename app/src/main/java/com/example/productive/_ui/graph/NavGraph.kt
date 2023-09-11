@@ -39,7 +39,7 @@ fun navGraph(
         }
 
         composable(route = NavDestinations.INSIGHT.name){
-
+            // upcoming
         }
 
         composable(route = NavDestinations.SETTINGS.name){
