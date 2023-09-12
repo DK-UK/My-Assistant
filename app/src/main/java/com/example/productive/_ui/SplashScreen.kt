@@ -25,7 +25,7 @@ fun SplashScreen(
     LaunchedEffect(Unit) {
         scope.launch(Dispatchers.IO) {
             try {
-                taskViewModel.postTasks()
+//                taskViewModel.postTasks()
             }
             catch (e : Exception){
                 

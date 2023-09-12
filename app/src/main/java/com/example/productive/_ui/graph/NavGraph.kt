@@ -19,7 +19,8 @@ fun navGraph(
     modifier: Modifier = Modifier,
     taskViewModel: TasksViewModel,
     onShowCountDownTimer: (Int, Int, Int) -> Unit,
-    onShowTimerScreen: () -> Unit
+    onShowTimerScreen: () -> Unit,
+    onTitleChanged : (String) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -27,15 +28,18 @@ fun navGraph(
         startDestination = NavDestinations.DASHBOARD.name){
 
         composable(route = NavDestinations.DASHBOARD.name){
+            onTitleChanged.invoke("Dashboard")
             Dashboard(modifier,
                 taskViewModel)
         }
 
         composable(route = NavDestinations.TASK_MANAGEMENT.name){
+            onTitleChanged.invoke("Task Management")
             TaskManagement(modifier, taskViewModel)
         }
 
         composable(route = NavDestinations.FOCUS_TIMER.name){
+            onTitleChanged.invoke("Focus Timer")
             Timer(modifier,
                 onShowCountDownTimer = onShowCountDownTimer,
                 onShowTimerScreen
@@ -43,10 +47,12 @@ fun navGraph(
         }
 
         composable(route = NavDestinations.INSIGHT.name){
+            onTitleChanged.invoke("Insight")
             // upcoming
         }
 
         composable(route = NavDestinations.SETTINGS.name){
+            onTitleChanged.invoke("Settings")
             SettingsScreen(context = context, modifier = modifier,
                 tasksViewModel = taskViewModel)
         }

@@ -77,7 +77,9 @@ fun MainScreen(
     var sec by remember {
         mutableStateOf(0)
     }
-
+    var title by remember{
+        mutableStateOf("")
+    }
 
     val onShowCountDownTimer = { hr:Int, mins:Int, secs:Int ->
         hour = hr
@@ -98,7 +100,7 @@ fun MainScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            text = (navHostController.currentDestination?.route) ?: "Dashboard",
+                            text = title,
                             style = MaterialTheme.typography.headlineMedium,
                             color = MaterialTheme.colorScheme.onPrimary
                         )
@@ -115,10 +117,14 @@ fun MainScreen(
                 navController = navHostController,
                 modifier = Modifier.padding(it),
                 taskViewModel,
-                onShowCountDownTimer = onShowCountDownTimer
-            ) {
+                onShowCountDownTimer = onShowCountDownTimer,
+                onTitleChanged = {
+                    title = it
+                },
+            onShowTimerScreen = {
                 showTimerScreen = !showTimerScreen
             }
+            )
         }
     }
 }
