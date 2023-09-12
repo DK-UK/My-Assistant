@@ -5,6 +5,11 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.example.productive._ui.viewModels.TasksViewModel
+import com.example.productive.data.local.data_store.getSignedInAccounts
 import com.example.productive.data.remote.ApiService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,11 +22,6 @@ class BaseApp : Application() {
     }
     override fun onCreate() {
         super.onCreate()
-
-        CoroutineScope(Dispatchers.IO).launch {
-            val client = ApiService()
-            client.test()
-        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationChannel =  NotificationChannel(

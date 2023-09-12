@@ -1,10 +1,13 @@
 package com.example.productive.data.local.entity
 
+import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+@Entity(tableName = "Tasks")
 data class ExternalModel(
     @PrimaryKey(autoGenerate = true)
     var id : Int = 0,
+    var email : String = "",
     var unique_id : Long = 0,
     var type : String = "",
     var title : String = "",

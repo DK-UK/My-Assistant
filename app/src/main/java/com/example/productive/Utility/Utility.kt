@@ -1,6 +1,10 @@
 package com.example.productive.Utility
 
 import android.annotation.SuppressLint
+import android.app.usage.NetworkStats
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkInfo
 import android.util.Log
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -102,5 +106,11 @@ object Utility {
         cal.set(Calendar.SECOND, sec)
 
         Log.e("Dhaval", "convertTimerToLong: ${cal.timeInMillis}", )
+    }
+
+    fun isConnectivityAvailable(context : Context) : Boolean {
+        val connection = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        return (connection.getNetworkInfo(ConnectivityManager.TYPE_MOBILE)?.state == NetworkInfo.State.CONNECTED ||
+            connection.getNetworkInfo(ConnectivityManager.TYPE_WIFI)?.state == NetworkInfo.State.CONNECTED)
     }
 }

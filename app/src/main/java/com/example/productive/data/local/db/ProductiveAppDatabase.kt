@@ -7,16 +7,15 @@ import androidx.room.RoomDatabase
 import com.example.productive.data.local.dao.EventDao
 import com.example.productive.data.local.dao.GoalDao
 import com.example.productive.data.local.entity.Event
+import com.example.productive.data.local.entity.ExternalModel
 import com.example.productive.data.local.entity.Goal
 import com.example.productive.data.local.entity.Task
 import com.example.productive.data.local.entity.TasksDao
 
-@Database(entities = [Task::class, Event::class, Goal::class], version = 1, exportSchema = false)
+@Database(entities = [ExternalModel::class], version = 1, exportSchema = false)
 abstract class ProductiveAppDatabase : RoomDatabase() {
 
     abstract fun taskDao() : TasksDao
-    abstract fun eventDao() : EventDao
-    abstract fun goalDao() : GoalDao
 
     companion object {
         private var INSTANCE : ProductiveAppDatabase? = null

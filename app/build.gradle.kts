@@ -67,8 +67,11 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
     implementation("androidx.navigation:navigation-compose:2.6.0")
 /*
-    implementation("androidx.compose.material3:material3-android:1.2.0-alpha04")
+    implementation("androidx.datastore:datastore-core:1.0.0")
 */
+    /*
+        implementation("androidx.compose.material3:material3-android:1.2.0-alpha04")
+    */
     val room_version = "2.5.2"
 
     implementation("androidx.room:room-runtime:$room_version")
@@ -78,6 +81,10 @@ dependencies {
 
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.1")
     implementation("androidx.compose.runtime:runtime-livedata:1.4.3")
+
+/*
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+*/
 
    /* implementation("io.ktor:ktor-client-android:1.5.0")
     implementation("io.ktor:ktor-client-serialization:1.5.0")

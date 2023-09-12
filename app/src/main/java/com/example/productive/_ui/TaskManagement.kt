@@ -448,7 +448,7 @@ fun handleTaskOperationClicks(
                     onConfirmBtnClicked = {
                         onDismissDialog.invoke()
                         task.is_deleted = true
-                        viewModel.deleteTask(task.type, task.unique_id)
+                        viewModel.deleteTask(task.unique_id)
 //                        viewModel.deleteTask(task)
                     },
                     dialogText = "Are you sure you want to delete this ?"

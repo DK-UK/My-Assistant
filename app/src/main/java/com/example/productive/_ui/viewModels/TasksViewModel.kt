@@ -46,23 +46,8 @@ class TasksViewModel(
 */
 
 
-    fun getAllTasksEventsGoals(): Flow<MutableList<ExternalModel>> {
-        val tasksFlow: Flow<List<Task>> = repository.getAllTasks()
-        val eventsFlow: Flow<List<Event>> = repository.getAllEvents()
-        val goalsFlow: Flow<List<Goal>> = repository.getAllGoals()
-
-        // Combine the flows
-        val externalModelList = mutableListOf<ExternalModel>()
-        val combinedFlow = combine(tasksFlow, eventsFlow, goalsFlow) { tasks, events, goals ->
-
-//            Log.e("Dhaval", "getAllTasksEventsGoals: tasks : ${tasks.get(0).title} -- events : ${events.get(0).title} -- goals : ${goals.get(0).title}", )
-
-            externalModelList.addAll(tasks.map { it.toExternalModel() })
-            externalModelList.addAll(events.map { it.toExternalModel() })
-            externalModelList.addAll(goals.map { it.toExternalModel() })
-            externalModelList
-        }
-        return combinedFlow
+    fun getAllTasksEventsGoals(): Flow<List<ExternalModel>> {
+        return repository.getAllTasks()
     }
 
     //region Tasks Functions
@@ -78,9 +63,9 @@ class TasksViewModel(
         }
     }
 
-    fun deleteTask(type : String, uniuqe_id : Long){
+    fun deleteTask(uniuqe_id : Long){
         viewModelScope.launch {
-            repository.deleteTask(type, uniuqe_id)
+            repository.deleteTask(uniuqe_id)
         }
     }
     //endregion
@@ -93,7 +78,13 @@ class TasksViewModel(
 
     fun postTasks(){
         viewModelScope.launch {
-//            repository.postTasks()
+            repository.postTasks()
+        }
+    }
+
+    fun updateUserEmail(email : String){
+        viewModelScope.launch {
+            repository.updateUserEmail(email)
         }
     }
 }
